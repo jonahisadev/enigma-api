@@ -1,0 +1,15 @@
+name: Login
+method: POST
+url: ${API_HOST}/accounts/login
+body:
+  content: |-
+    {
+      "email": "test@test.com",
+      "password": "password"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:log_in

@@ -1,11 +1,16 @@
 import { FastifyInstance } from "fastify";
-import * as helper from "../helper";
+import Fastify from "fastify";
+import { serializerCompiler, validatorCompiler, ZodTypeProvider } from "fastify-type-provider-zod";
+import root from "../../routes/root.route";
 
 describe("Root routes", () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await helper.build();
+    app = Fastify({ logger: false }).withTypeProvider<ZodTypeProvider>();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    await app.register(root);
   });
 
   afterAll(async () => {
