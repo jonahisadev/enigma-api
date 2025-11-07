@@ -1,0 +1,33 @@
+name: 🔨 CI
+
+on:
+  push:
+    branches:
+      - "*" 
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  lint-and-test:
+    name: "Lint and Test"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run ESLint
+        run: yarn lint
+
+      - name: Test Suite
+        run: yarn test
