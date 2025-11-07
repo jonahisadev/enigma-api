@@ -1,12 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateSecretRequest, UpdateSecretRequest, GetSecretsQuery, DeleteSecretQuery } from '../types/requests';
 import { SecretResponse, SecretsListResponse, DeleteSecretResponse } from '../types/responses';
-import { SecretRepository } from '../repositories/secret.repository';
-import { VaultRepository } from '../repositories/vault.repository';
 
 export async function createSecret(
-  request: FastifyRequest<{ Params: { vaultId: string }; Body: CreateSecretRequest }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { vaultId: string }; Body: CreateSecretRequest }>,
+  _reply: FastifyReply
 ): Promise<SecretResponse> {
   // TODO: Implement create secret logic
   // 1. Find vault by public ID
@@ -19,8 +17,8 @@ export async function createSecret(
 }
 
 export async function getSecret(
-  request: FastifyRequest<{ Params: { vaultId: string; secretId: string } }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { vaultId: string; secretId: string } }>,
+  _reply: FastifyReply
 ): Promise<SecretResponse> {
   // TODO: Implement get secret logic
   // 1. Find vault by public ID
@@ -32,8 +30,8 @@ export async function getSecret(
 }
 
 export async function getSecrets(
-  request: FastifyRequest<{ Params: { vaultId: string }; Querystring: GetSecretsQuery }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { vaultId: string }; Querystring: GetSecretsQuery }>,
+  _reply: FastifyReply
 ): Promise<SecretsListResponse> {
   // TODO: Implement get secrets logic
   // 1. Find vault by public ID
@@ -46,8 +44,8 @@ export async function getSecrets(
 }
 
 export async function updateSecret(
-  request: FastifyRequest<{ Params: { vaultId: string; secretId: string }; Body: UpdateSecretRequest }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { vaultId: string; secretId: string }; Body: UpdateSecretRequest }>,
+  _reply: FastifyReply
 ): Promise<SecretResponse> {
   // TODO: Implement update secret logic
   // 1. Find vault by public ID
@@ -60,8 +58,8 @@ export async function updateSecret(
 }
 
 export async function deleteSecret(
-  request: FastifyRequest<{ Params: { vaultId: string }; Querystring: DeleteSecretQuery }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { vaultId: string }; Querystring: DeleteSecretQuery }>,
+  _reply: FastifyReply
 ): Promise<DeleteSecretResponse> {
   // TODO: Implement delete secret logic
   // 1. Find vault by public ID

@@ -43,7 +43,7 @@ export class InternalServerError extends RestError {
 
 export async function errorHandler(
   this: FastifyInstance,
-  error: Error & { statusCode?: number; validation?: any },
+  error: Error & { statusCode?: number; validation?: unknown },
   _req: FastifyRequest,
   res: FastifyReply,
 ) {

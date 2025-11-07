@@ -1,11 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateVaultRequest, UpdateVaultRequest } from '../types/requests';
 import { VaultResponse, VaultsListResponse } from '../types/responses';
-import { VaultRepository } from '../repositories/vault.repository';
 
 export async function createVault(
-  request: FastifyRequest<{ Body: CreateVaultRequest }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Body: CreateVaultRequest }>,
+  _reply: FastifyReply
 ): Promise<VaultResponse> {
   // TODO: Implement create vault logic
   // 1. Get authenticated user ID from request.user
@@ -17,8 +16,8 @@ export async function createVault(
 }
 
 export async function getVault(
-  request: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { id: string } }>,
+  _reply: FastifyReply
 ): Promise<VaultResponse> {
   // TODO: Implement get vault logic
   // 1. Find vault by public ID
@@ -29,8 +28,8 @@ export async function getVault(
 }
 
 export async function getVaults(
-  request: FastifyRequest,
-  reply: FastifyReply
+  _request: FastifyRequest,
+  _reply: FastifyReply
 ): Promise<VaultsListResponse> {
   // TODO: Implement get all vaults logic
   // 1. Get authenticated user ID from request.user
@@ -41,8 +40,8 @@ export async function getVaults(
 }
 
 export async function updateVault(
-  request: FastifyRequest<{ Params: { id: string }; Body: UpdateVaultRequest }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { id: string }; Body: UpdateVaultRequest }>,
+  _reply: FastifyReply
 ): Promise<VaultResponse> {
   // TODO: Implement update vault logic
   // 1. Find vault by public ID
@@ -54,8 +53,8 @@ export async function updateVault(
 }
 
 export async function deleteVault(
-  request: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply
+  _request: FastifyRequest<{ Params: { id: string } }>,
+  _reply: FastifyReply
 ): Promise<{ message: string }> {
   // TODO: Implement delete vault logic
   // 1. Find vault by public ID
