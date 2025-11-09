@@ -1,0 +1,6 @@
+name: Get All Vaults
+url: ${API_HOST}/vaults
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token

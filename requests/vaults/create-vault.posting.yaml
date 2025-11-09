@@ -1,0 +1,18 @@
+name: Create Vault
+method: POST
+url: ${API_HOST}/vaults
+body:
+  content: |-
+    {
+      "name": "test-vault"
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:create_vault

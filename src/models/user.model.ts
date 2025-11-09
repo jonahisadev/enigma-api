@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Audit } from './audit.model';
 import { Vault } from './vault.model';
 import { RefreshToken } from './refresh_token.model';
@@ -8,6 +8,7 @@ export class User extends Audit {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index()
   @Column({ name: "public_id", unique: true })
   publicId: string;
 

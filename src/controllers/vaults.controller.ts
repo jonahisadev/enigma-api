@@ -1,66 +1,137 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateVaultRequest, UpdateVaultRequest } from '../types/requests';
 import { VaultResponse, VaultsListResponse } from '../types/responses';
+import { UserRepository } from '../repositories/user.repository';
+import { BadRequestError, NotFoundError } from '../services/errors';
+import { v4 as uuid } from 'uuid';
+import { Vault } from '../models/vault.model';
+import { VaultRepository } from '../repositories/vault.repository';
+import { KmsFactory } from '../services/kms/factory';
 
 export async function createVault(
-  _request: FastifyRequest<{ Body: CreateVaultRequest }>,
-  _reply: FastifyReply
+  request: FastifyRequest<{ Body: CreateVaultRequest }>,
+  reply: FastifyReply
 ): Promise<VaultResponse> {
-  // TODO: Implement create vault logic
-  // 1. Get authenticated user ID from request.user
-  // 2. Generate public ID for vault
-  // 3. Create vault with name, encryptionKey, and userId
-  // 4. Return vault response
+  const { name } = request.body;
 
-  throw new Error('Not implemented');
+  const user = await UserRepository.findOne({
+    where: {
+      publicId: request.user.userId
+    }
+  });
+
+  if (!user) {
+    throw new BadRequestError("Invalid request");
+  }
+
+  // Generate vault key
+  const kmsProvider = KmsFactory.createProvider(user.kmsProvider);
+  const vaultKey = await kmsProvider.generateVaultKey();
+
+  // Save vault to database
+  const vault = new Vault();
+  vault.publicId = uuid();
+  vault.name = name;
+  vault.encryptionKey = vaultKey.key.toString('base64');
+  vault.keyIv = vaultKey.iv.toString('base64');
+  vault.secrets = [];
+  vault.user = user;
+  await VaultRepository.save(vault);
+
+  // Return vault response
+  return reply.status(201).send({
+    publicId: vault.publicId,
+    name: vault.name,
+    createdAt: vault.createdAt,
+    updatedAt: vault.updatedAt
+  });
 }
 
 export async function getVault(
-  _request: FastifyRequest<{ Params: { id: string } }>,
-  _reply: FastifyReply
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
 ): Promise<VaultResponse> {
-  // TODO: Implement get vault logic
-  // 1. Find vault by public ID
-  // 2. Verify vault belongs to authenticated user
-  // 3. Return vault response
+  const { id: publicId } = request.params;
+  const vault = await VaultRepository.findOne({
+    where: { publicId },
+    relations: ['user'],
+  });
 
-  throw new Error('Not implemented');
+  if (!vault || vault.user.publicId !== request.user.userId) {
+    throw new NotFoundError(`Vault not found by ID ${publicId}`);
+  }
+
+  return reply.status(200).send({
+    publicId: vault.publicId,
+    name: vault.name,
+    createdAt: vault.createdAt,
+    updatedAt: vault.updatedAt
+  });
 }
 
 export async function getVaults(
-  _request: FastifyRequest,
-  _reply: FastifyReply
+  request: FastifyRequest,
+  reply: FastifyReply
 ): Promise<VaultsListResponse> {
-  // TODO: Implement get all vaults logic
-  // 1. Get authenticated user ID from request.user
-  // 2. Find all vaults for user
-  // 3. Return vaults list response
+  const userId = request.user.userId;
+  const vaults = await VaultRepository.find({
+    where: {
+      user: {
+        publicId: userId
+      }
+    }
+  });
 
-  throw new Error('Not implemented');
+  return reply.status(200).send({
+    vaults: vaults.map(vault => ({
+      publicId: vault.publicId,
+      name: vault.name,
+      createdAt: vault.createdAt,
+      updatedAt: vault.updatedAt
+    }))
+  });
 }
 
 export async function updateVault(
-  _request: FastifyRequest<{ Params: { id: string }; Body: UpdateVaultRequest }>,
-  _reply: FastifyReply
+  request: FastifyRequest<{ Params: { id: string }; Body: UpdateVaultRequest }>,
+  reply: FastifyReply
 ): Promise<VaultResponse> {
-  // TODO: Implement update vault logic
-  // 1. Find vault by public ID
-  // 2. Verify vault belongs to authenticated user
-  // 3. Update vault fields
-  // 4. Save and return updated vault
+  const { name } = request.body;
 
-  throw new Error('Not implemented');
+  const vault = await VaultRepository.findOne({
+    where: { publicId: request.params.id },
+    relations: ['user'],
+  });
+
+  if (!vault || vault.user.publicId !== request.user.userId) {
+    throw new NotFoundError(`Vault not found by ID ${request.params.id}`);
+  }
+
+  vault.name = name;
+  await VaultRepository.save(vault);
+
+  return reply.status(200).send({
+    publicId: vault.publicId,
+    name: vault.name,
+    createdAt: vault.createdAt,
+    updatedAt: vault.updatedAt
+  });
 }
 
 export async function deleteVault(
-  _request: FastifyRequest<{ Params: { id: string } }>,
-  _reply: FastifyReply
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
 ): Promise<{ message: string }> {
-  // TODO: Implement delete vault logic
-  // 1. Find vault by public ID
-  // 2. Verify vault belongs to authenticated user
-  // 3. Delete vault (this should cascade delete secrets)
-  // 4. Return success message
+  const { id: vaultId } = request.params;
+  const vault = await VaultRepository.findOne({
+    where: { publicId: vaultId },
+    relations: ['user'],
+  });
 
-  throw new Error('Not implemented');
+  if (!vault || vault.user.publicId !== request.user.userId) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
+
+  await VaultRepository.delete(vault.id);
+  return reply.status(200).send({ message: 'Vault deleted successfully' });
 }

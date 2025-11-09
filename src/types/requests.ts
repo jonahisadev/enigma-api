@@ -13,12 +13,10 @@ export interface RevokeTokenRequest {
 
 export interface CreateVaultRequest {
   name: string;
-  encryptionKey: string;
 }
 
 export interface UpdateVaultRequest {
-  name?: string;
-  encryptionKey?: string;
+  name: string;
 }
 
 export interface CreateSecretRequest {

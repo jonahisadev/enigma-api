@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Audit } from './audit.model';
 import { User } from './user.model';
 import { Secret } from './secret.model';
@@ -8,6 +8,7 @@ export class Vault extends Audit {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index()
   @Column({ name: "public_id", unique: true })
   publicId: string;
 
@@ -16,6 +17,9 @@ export class Vault extends Audit {
 
   @Column({ type: 'text', name: 'encryption_key' })
   encryptionKey: string;
+
+  @Column({ type: 'text', name: 'key_iv' })
+  keyIv: string;
 
   @ManyToOne(() => User, (user) => user.vaults)
   @JoinColumn({ name: "user_id" })
