@@ -44,3 +44,65 @@ export interface DeleteSecretResponse {
   message: string;
   deletedCount: number;
 }
+
+// Role Management
+export interface RoleResponse {
+  publicId: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RolesListResponse {
+  roles: RoleResponse[];
+}
+
+export interface AuthMethodResponse {
+  id: number;
+  authType: 'cidr' | 'token';
+  config: {
+    allowedCidrs?: string[];
+    lifetime?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AuthMethodsListResponse {
+  authMethods: AuthMethodResponse[];
+}
+
+export interface TokenAuthMethodResponse extends AuthMethodResponse {
+  publicId: string;
+  token: string;
+  expiresAt: Date;
+}
+
+export interface VaultPermissionResponse {
+  vaultId: string;
+  vaultName: string;
+  canWrite: boolean;
+  createdAt: Date;
+}
+
+export interface VaultPermissionsListResponse {
+  permissions: VaultPermissionResponse[];
+}
+
+export interface RoleTokenResponse {
+  publicId: string;
+  name?: string;
+  expiresAt: Date;
+  revoked: boolean;
+  createdAt: Date;
+}
+
+export interface RoleTokensListResponse {
+  tokens: RoleTokenResponse[];
+}
+
+// Role Auth
+export interface RoleLoginResponse {
+  accessToken: string;
+}

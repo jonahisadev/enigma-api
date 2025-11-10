@@ -114,7 +114,7 @@ describe('Secret Routes', () => {
       });
 
       // Generate access token
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Create secret request
       const response = await app.inject({
@@ -151,7 +151,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(null);
 
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -192,7 +192,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
 
       // Generate access token for different user
-      const accessToken = app.jwt.sign({ userId: requestingUserId });
+      const accessToken = app.jwt.sign({ userId: requestingUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -238,7 +238,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
       (SecretRepository.findOne as any).mockResolvedValue(existingSecret);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -261,7 +261,7 @@ describe('Secret Routes', () => {
 
     it('should fail with missing name field', async () => {
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act: Create secret without name
       const response = await app.inject({
@@ -281,7 +281,7 @@ describe('Secret Routes', () => {
 
     it('should fail with missing value field', async () => {
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act: Create secret without value
       const response = await app.inject({
@@ -335,7 +335,7 @@ describe('Secret Routes', () => {
       (SecretRepository.findOne as any).mockResolvedValue(mockSecret);
 
       // Generate access token
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Get secret request
       const response = await app.inject({
@@ -361,7 +361,7 @@ describe('Secret Routes', () => {
 
       const mockVaultId = randomUUID();
       const mockSecretId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -404,7 +404,7 @@ describe('Secret Routes', () => {
 
       (SecretRepository.findOne as any).mockResolvedValue(mockSecret);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Request with wrong vault ID
       const response = await app.inject({
@@ -445,7 +445,7 @@ describe('Secret Routes', () => {
 
       (SecretRepository.findOne as any).mockResolvedValue(mockSecret);
 
-      const accessToken = app.jwt.sign({ userId: requestingUserId });
+      const accessToken = app.jwt.sign({ userId: requestingUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -500,7 +500,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
       (SecretRepository.find as any).mockResolvedValue(mockSecrets);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -558,7 +558,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
       (SecretRepository.find as any).mockResolvedValue(filteredSecrets);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Filter by name
       const response = await app.inject({
@@ -607,7 +607,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
       (SecretRepository.find as any).mockResolvedValue(latestSecrets);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Filter by latest
       const response = await app.inject({
@@ -649,7 +649,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
       (SecretRepository.find as any).mockResolvedValue([]);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -671,7 +671,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(null);
 
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -724,7 +724,7 @@ describe('Secret Routes', () => {
         return Promise.resolve(secret);
       });
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Update secret
       const response = await app.inject({
@@ -752,7 +752,7 @@ describe('Secret Routes', () => {
 
       const mockVaultId = randomUUID();
       const mockSecretId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -793,7 +793,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
       (SecretRepository.findOne as any).mockResolvedValue(null);
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -816,7 +816,7 @@ describe('Secret Routes', () => {
     it('should fail with missing value field', async () => {
       const mockVaultId = randomUUID();
       const mockSecretId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act: Update without value
       const response = await app.inject({
@@ -859,7 +859,7 @@ describe('Secret Routes', () => {
       (SecretRepository.find as any).mockResolvedValue(mockSecrets);
       (SecretRepository.delete as any).mockResolvedValue({ affected: 2 });
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Delete secret by name
       const response = await app.inject({
@@ -898,7 +898,7 @@ describe('Secret Routes', () => {
       (SecretRepository.find as any).mockResolvedValue([]);
       (SecretRepository.delete as any).mockResolvedValue({ affected: 0 });
 
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -920,7 +920,7 @@ describe('Secret Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(null);
 
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -954,7 +954,7 @@ describe('Secret Routes', () => {
 
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
 
-      const accessToken = app.jwt.sign({ userId: requestingUserId });
+      const accessToken = app.jwt.sign({ userId: requestingUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -971,7 +971,7 @@ describe('Secret Routes', () => {
 
     it('should fail with missing name query parameter', async () => {
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act: Delete without name query param
       const response = await app.inject({

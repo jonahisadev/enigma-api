@@ -11,6 +11,7 @@ import { RefreshTokenRepository } from '../repositories/refresh-token.repository
 export function generateAccessToken(user: User, fastify: FastifyInstance): string {
   return fastify.jwt.sign({
     userId: user.publicId,
+    authType: 'password',
   });
 }
 

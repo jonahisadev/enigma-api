@@ -298,7 +298,7 @@ describe('Auth Routes', () => {
 
       // Generate access token for authorization
       const mockUserId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Revoke the specific token
       const response = await app.inject({
@@ -333,7 +333,7 @@ describe('Auth Routes', () => {
       (RefreshTokenRepository.delete as any).mockResolvedValue({ affected: 2 });
 
       // Generate access token for authorization
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Revoke all tokens
       const response = await app.inject({

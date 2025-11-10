@@ -77,27 +77,99 @@ export const UserRepository = AppDataSource.getRepository(User);
 ```
 User (1) ──→ (Many) Vault (1) ──→ (Many) Secret
 User (1) ──→ (Many) RefreshToken
+User (1) ──→ (Many) Role
+Role (1) ──→ (Many) RoleAuthMethod (1) ──→ (Many) RoleToken
+Role (1) ──→ (Many) RoleVaultPermission ──→ (1) Vault
 ```
 
 - Users have multiple vaults for organizing secrets
 - Vaults contain multiple versioned secrets
 - Secrets track versions (updates create new records, not modifications)
+- Users have multiple roles for delegated access (CIDR/token auth)
+- Roles define which vaults can be accessed and with what permissions (read-only or read-write)
 - All entities extend `Audit` base class for automatic `createdAt`/`updatedAt` timestamps
 
 ### Authentication System
 
-**Two-token approach**:
-1. **Access Token (JWT)**: Short-lived (15 min), contains `userId` (public ID)
-2. **Refresh Token**: Long-lived (30 days), stored in database, can be revoked
+**Three authentication methods**:
+1. **Password (User Account)**: Email + password login for account owners
+2. **CIDR (Role-Based)**: IP-based authentication for server/infrastructure access
+3. **Token (Role-Based)**: Static token authentication for CI/CD and automation
+
+**Two-token approach for password auth**:
+1. **Access Token (JWT)**: Short-lived (15 min), contains user/role info
+2. **Refresh Token**: Long-lived (30 days), stored in database, can be revoked (only for password auth)
 
 **Protected routes** use `preHandler: authenticate` middleware which calls `request.jwtVerify()`.
 
 **JWT payload structure**:
 ```typescript
-{ userId: string }  // User's public ID (UUID), not database ID
+{
+  userId: string;                              // User's public ID (account owner)
+  roleId?: string;                             // Role public ID (if role-based auth)
+  vaultPermissions?: Array<{                   // Accessible vaults (if role-based)
+    vaultId: string;
+    canWrite: boolean;
+  }>;
+  authType: 'password' | 'cidr' | 'token';    // Authentication method used
+}
 ```
 
-Access authenticated user in controllers: `request.user.userId`
+**Access control**:
+- Password auth: Full access to all user's vaults (vaultPermissions omitted)
+- Role auth: Limited to vaults in `vaultPermissions` array
+- `canWrite: false` = Read-only (GET operations)
+- `canWrite: true` = Read-write (GET + PUT vault + POST/PUT/DELETE secrets)
+- Vault deletion (DELETE /vaults/:id) requires password auth
+
+Access authenticated user in controllers: `request.user.userId`, `request.user.roleId`, `request.user.vaultPermissions`
+
+### Role-Based Authentication (Delegated Access)
+
+**Purpose**: Allow users to create roles for automated systems, services, and infrastructure without sharing their password.
+
+**Role Management Flow**:
+1. User creates role: `POST /roles` with name and description
+2. User adds auth method: `POST /roles/:roleId/auth-methods`
+   - **CIDR**: IP-based (e.g., `{ authType: 'cidr', config: { allowedCidrs: ['10.0.1.0/24'] } }`)
+   - **Token**: Static token (e.g., `{ authType: 'token', config: { lifetime: '30d', name: 'github-actions' } }`)
+     - Returns token ONCE (never retrievable again, bcrypt hashed in DB)
+3. User grants vault access: `POST /roles/:roleId/vaults` with `{ vaultId, canWrite: true/false }`
+4. Role authenticates: `POST /roles/:roleId/login/cidr` or `POST /roles/:roleId/login/token { token }`
+5. Receives JWT with embedded `vaultPermissions` array
+
+**Key Features**:
+- Roles are user-owned (isolated per account)
+- Multiple auth methods per role
+- Multiple vault permissions per role
+- Granular read/write control per vault
+- Tokens are bcrypt hashed (like passwords)
+- Tokens can be individually revoked
+- CIDR validation at login time only (not per-request)
+
+**Example Use Case**:
+```bash
+# Create role for EC2 instance running "alpha" service
+POST /roles { name: "alpha-ec2", description: "Alpha service EC2 instances" }
+→ { roleId: "role-xyz" }
+
+# Add CIDR auth for EC2 IP range
+POST /roles/role-xyz/auth-methods
+{ authType: "cidr", config: { allowedCidrs: ["10.0.1.0/24"] } }
+
+# Grant read-only access to alpha vault
+POST /roles/role-xyz/vaults
+{ vaultId: "vault-alpha", canWrite: false }
+
+# EC2 instance authenticates (IP: 10.0.1.50)
+POST /roles/role-xyz/login/cidr
+→ JWT with { userId, roleId, vaultPermissions: [{ vaultId: "vault-alpha", canWrite: false }], authType: "cidr" }
+
+# EC2 can now read alpha vault secrets (but not modify)
+GET /vaults/vault-alpha/secrets ✓
+PUT /vaults/vault-alpha ✗ (read-only)
+GET /vaults/vault-beta/secrets ✗ (no permission)
+```
 
 ### Error Handling
 
@@ -162,12 +234,14 @@ Tests are isolated, fast (~2s for full suite), and use `app.inject()` for reques
 - This provides audit trail and rollback capability
 
 ### Stub Controllers
-Vault and Secret controllers are currently stubs that throw "Not implemented". When implementing:
-- Follow auth controller patterns
-- Extract business logic to service layer
+Role controllers are currently stubs that throw "Not implemented". When implementing:
+- Follow auth/vault/secret controller patterns
+- Extract business logic to service layer if complex
 - Use repository pattern for data access
-- Verify authorization (check entity belongs to authenticated user)
-- Generate public IDs with `randomUUID()` from `crypto`
+- Verify role ownership (role.user.publicId === request.user.userId)
+- Generate public IDs and tokens with `randomUUID()` and `randomBytes()` from `crypto`
+- Hash tokens with bcrypt before storing
+- For CIDR validation, use `ipaddr.js` library
 
 ### Database Schema Management
 Currently using `synchronize: true` in TypeORM (auto-generates schema). For production:
@@ -225,20 +299,74 @@ When adding new features:
 ## Current Implementation Status
 
 ### Completed
-- Authentication system (login, refresh, revoke)
-- User management (manual creation script)
-- Database models and relationships
-- Error handling framework
-- Validation infrastructure
-- Test infrastructure
-- Linting and CI/CD
+- **Authentication system**
+  - Password login (login, refresh, revoke) - ✅ Fully implemented
+  - Role-based auth infrastructure - ✅ Stubbed (CIDR and Token login)
+- **User management** - ✅ Manual creation script
+- **Vault CRUD** - ✅ Fully implemented (5 endpoints, tested)
+- **Secret CRUD** - ✅ Fully implemented (5 endpoints with versioning, tested)
+- **Encryption** - ✅ AES-256-CBC for vault keys and secret values
+- **KMS integration** - ✅ Local KMS provider implemented, AWS KMS provider stubbed
+- **Database models** - ✅ All entities created (User, Vault, Secret, RefreshToken, Role, RoleAuthMethod, RoleVaultPermission, RoleToken)
+- **Test infrastructure** - ✅ 57 passing tests (auth, vaults, secrets)
+- **Error handling framework** - ✅ Custom error classes with global handler
+- **Validation infrastructure** - ✅ Zod schemas for all routes
+- **Linting and CI/CD** - ✅ ESLint configured
 
 ### To Implement (Stub Controllers)
-- Vault CRUD operations (5 endpoints)
-- Secret CRUD operations (5 endpoints)
-- Encryption of vault keys and secret values
-- KMS integration for encryption key management
-- Database migrations (replace synchronize)
+- **Role management** (14 endpoints) - Controllers stubbed with TODO comments
+  - Role CRUD (create, get, list, update, delete)
+  - Auth method management (add CIDR/token, list, remove)
+  - Vault permission management (grant, list, update, revoke)
+  - Token management (list, revoke)
+- **Role authentication** (2 endpoints) - Controllers stubbed with TODO comments
+  - CIDR login (IP-based authentication)
+  - Token login (static token authentication)
+- **Auth service updates** - Need to add `authType: 'password'` to existing login
+- **Permission checks** - Need to add vault permission validation in vault/secret controllers
+- **AWS KMS provider** - Implement AWS KMS integration
+- **Database migrations** - Replace `synchronize: true` with explicit migrations
+
+## API Endpoints
+
+### Authentication
+- `POST /accounts/login` - Login with email/password
+- `POST /accounts/login/refresh` - Refresh access token
+- `POST /accounts/login/revoke` - Revoke refresh token(s)
+
+### Vaults
+- `POST /vaults` - Create vault
+- `GET /vaults` - List all vaults
+- `GET /vaults/:id` - Get vault by ID
+- `PUT /vaults/:id` - Update vault name
+- `DELETE /vaults/:id` - Delete vault (owner only, cascades to secrets)
+
+### Secrets
+- `POST /vaults/:vaultId/secrets` - Create secret
+- `GET /vaults/:vaultId/secrets` - List secrets (supports `?name=` and `?latest=` filters)
+- `GET /vaults/:vaultId/secrets/:secretId` - Get secret (decrypted)
+- `PUT /vaults/:vaultId/secrets/:secretId` - Update secret (creates new version)
+- `DELETE /vaults/:vaultId/secrets?name=` - Delete secret by name (all versions)
+
+### Roles (Stubbed)
+- `POST /roles` - Create role
+- `GET /roles` - List roles
+- `GET /roles/:roleId` - Get role
+- `PUT /roles/:roleId` - Update role
+- `DELETE /roles/:roleId` - Delete role
+- `POST /roles/:roleId/auth-methods` - Add CIDR or token auth method
+- `GET /roles/:roleId/auth-methods` - List auth methods
+- `DELETE /roles/:roleId/auth-methods/:id` - Remove auth method
+- `POST /roles/:roleId/vaults` - Grant vault access
+- `GET /roles/:roleId/vaults` - List vault permissions
+- `PUT /roles/:roleId/vaults/:vaultId` - Update vault permission
+- `DELETE /roles/:roleId/vaults/:vaultId` - Revoke vault access
+- `GET /roles/:roleId/tokens` - List tokens
+- `DELETE /roles/:roleId/tokens/:tokenId` - Revoke token
+
+### Role Authentication (Stubbed)
+- `POST /roles/:roleId/login/cidr` - Login via CIDR (IP-based)
+- `POST /roles/:roleId/login/token` - Login via static token
 
 ## Additional Notes
 

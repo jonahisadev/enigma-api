@@ -7,6 +7,8 @@ import root from "./routes/root.route";
 import auth from "./routes/auth.route";
 import vaults from "./routes/vaults.route";
 import secrets from "./routes/secrets.route";
+import roles from "./routes/roles.route";
+import roleAuth from "./routes/role-auth.route";
 import { errorHandler } from "./services/errors";
 
 const fastify = Fastify({
@@ -30,6 +32,8 @@ fastify.register(root);
 fastify.register(auth);
 fastify.register(vaults);
 fastify.register(secrets);
+fastify.register(roles);
+fastify.register(roleAuth);
 
 // Error handler
 fastify.setErrorHandler(errorHandler);

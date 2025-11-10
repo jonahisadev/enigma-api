@@ -11,7 +11,7 @@ import { SecretRepository } from '../repositories/secret.repository';
 
 export async function createSecret(
   request: FastifyRequest<{ Params: { vaultId: string }; Body: CreateSecretRequest }>,
-  _reply: FastifyReply
+  reply: FastifyReply
 ): Promise<SecretResponse> {
   const vaultId = request.params.vaultId;
   const { name, value } = request.body;
@@ -47,7 +47,7 @@ export async function createSecret(
   secret.version = 1;
   await SecretRepository.save(secret);
 
-  return _reply.status(201).send({
+  return reply.status(201).send({
     publicId: secret.publicId,
     name: secret.name,
     version: secret.version,

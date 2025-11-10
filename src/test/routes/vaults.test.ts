@@ -100,7 +100,7 @@ describe('Vault Routes', () => {
       });
 
       // Generate access token for authorization
-      const accessToken = app.jwt.sign({ userId: mockUser.publicId });
+      const accessToken = app.jwt.sign({ userId: mockUser.publicId, authType: 'password' });
 
       // Act: Create vault request
       const response = await app.inject({
@@ -134,7 +134,7 @@ describe('Vault Routes', () => {
       (UserRepository.findOne as any).mockResolvedValue(null);
 
       // Generate access token for non-existent user
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -156,7 +156,7 @@ describe('Vault Routes', () => {
 
     it('should fail with missing name field', async () => {
       // Generate access token
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act: Create vault without name
       const response = await app.inject({
@@ -211,7 +211,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
 
       // Generate access token for the vault owner
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Get vault request
       const response = await app.inject({
@@ -242,7 +242,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(null);
 
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -280,7 +280,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
 
       // Generate access token for different user
-      const accessToken = app.jwt.sign({ userId: requestingUserId });
+      const accessToken = app.jwt.sign({ userId: requestingUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -333,7 +333,7 @@ describe('Vault Routes', () => {
       (VaultRepository.find as any).mockResolvedValue(mockVaults);
 
       // Generate access token
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: List vaults request
       const response = await app.inject({
@@ -361,7 +361,7 @@ describe('Vault Routes', () => {
       // Arrange: Mock empty vault list
       (VaultRepository.find as any).mockResolvedValue([]);
 
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -419,7 +419,7 @@ describe('Vault Routes', () => {
       (VaultRepository.save as any).mockResolvedValue(updatedVault);
 
       // Generate access token for vault owner
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Update vault request
       const response = await app.inject({
@@ -452,7 +452,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(null);
 
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -493,7 +493,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
 
       // Generate access token for different user
-      const accessToken = app.jwt.sign({ userId: requestingUserId });
+      const accessToken = app.jwt.sign({ userId: requestingUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -514,7 +514,7 @@ describe('Vault Routes', () => {
     });
 
     it('should fail with missing name field', async () => {
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act: Update vault without name
       const response = await app.inject({
@@ -552,7 +552,7 @@ describe('Vault Routes', () => {
       (VaultRepository.delete as any).mockResolvedValue({ affected: 1 });
 
       // Generate access token for vault owner
-      const accessToken = app.jwt.sign({ userId: mockUserId });
+      const accessToken = app.jwt.sign({ userId: mockUserId, authType: 'password' });
 
       // Act: Delete vault request
       const response = await app.inject({
@@ -581,7 +581,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(null);
 
       const mockVaultId = randomUUID();
-      const accessToken = app.jwt.sign({ userId: randomUUID() });
+      const accessToken = app.jwt.sign({ userId: randomUUID(), authType: 'password' });
 
       // Act
       const response = await app.inject({
@@ -619,7 +619,7 @@ describe('Vault Routes', () => {
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
 
       // Generate access token for different user
-      const accessToken = app.jwt.sign({ userId: requestingUserId });
+      const accessToken = app.jwt.sign({ userId: requestingUserId, authType: 'password' });
 
       // Act
       const response = await app.inject({
