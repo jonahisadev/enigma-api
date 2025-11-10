@@ -3,7 +3,7 @@ import { createCipheriv, createDecipheriv } from 'crypto'
 export interface AesKey {
   key: Buffer;
   iv: Buffer;
-};
+}
 
 export const aesEncrypt = (data: Buffer, key: AesKey): Buffer => {
   const cipher = createCipheriv('aes-256-cbc', key.key, key.iv);

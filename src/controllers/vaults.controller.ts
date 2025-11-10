@@ -26,7 +26,7 @@ export async function createVault(
   }
 
   // Generate vault key
-  const kmsProvider = KmsFactory.createProvider(user.kmsProvider);
+  const kmsProvider = KmsFactory.createProvider(user.kmsProvider, user.accountKeyId);
   const vaultKey = await kmsProvider.generateVaultKey();
 
   // Save vault to database

@@ -34,7 +34,7 @@ export async function createSecret(
   }
 
   // Encrypt secret value with vault key
-  const kmsProvider = KmsFactory.createProvider(vault.user.kmsProvider);
+  const kmsProvider = KmsFactory.createProvider(vault.user.kmsProvider, vault.user.accountKeyId);
   const vaultKey = await kmsProvider.decryptVaultKey(vault.encryptionKey, vault.keyIv);
   const encryptedValue = aesEncrypt(Buffer.from(value, 'utf-8'), vaultKey).toString('base64');
 
@@ -74,7 +74,7 @@ export async function getSecret(
 
   // Decrypt secret value with vault key
   const vault = secret.vault;
-  const kmsProvider = KmsFactory.createProvider(vault.user.kmsProvider);
+  const kmsProvider = KmsFactory.createProvider(vault.user.kmsProvider, vault.user.accountKeyId);
   const vaultKey = await kmsProvider.decryptVaultKey(vault.encryptionKey, vault.keyIv);
   const decryptedValue = aesDecrypt(Buffer.from(secret.value, 'base64'), vaultKey).toString('utf-8');
 
@@ -106,28 +106,16 @@ export async function getSecrets(
 
   const secrets = await SecretRepository.find({
     where: {
-      latest: latest === undefined ? undefined : latest,
+      ...(name && { name }),
+      ...(latest !== undefined && { latest }),
       vault: {
         id: vault.id,
       }
     }
   });
 
-  if (!name) {
-    return reply.status(200).send({
-      secrets: secrets.map(secret => ({
-        publicId: secret.publicId,
-        name: secret.name,
-        version: secret.version,
-        createdAt: secret.createdAt,
-        updatedAt: secret.updatedAt,
-      }))
-    });
-  }
-
-  const filteredSecrets = secrets.filter(secret => secret.name === name);
   return reply.status(200).send({
-    secrets: filteredSecrets.map(secret => ({
+    secrets: secrets.map(secret => ({
       publicId: secret.publicId,
       name: secret.name,
       version: secret.version,
@@ -167,7 +155,7 @@ export async function updateSecret(
   }
 
   // Encrypt new secret value with vault key
-  const kmsProvider = KmsFactory.createProvider(vault.user.kmsProvider);
+  const kmsProvider = KmsFactory.createProvider(vault.user.kmsProvider, vault.user.accountKeyId);
   const vaultKey = await kmsProvider.decryptVaultKey(vault.encryptionKey, vault.keyIv);
   const encryptedValue = aesEncrypt(Buffer.from(value, 'utf-8'), vaultKey).toString('base64');
 
@@ -178,6 +166,7 @@ export async function updateSecret(
   newSecret.vault = vault;
   newSecret.version = secret.version + 1;
   newSecret.value = encryptedValue;
+  newSecret.latest = true;
   await SecretRepository.save(newSecret);
 
   // Update previous secret to not be latest

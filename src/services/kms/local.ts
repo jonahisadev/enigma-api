@@ -11,9 +11,9 @@ export class LocalKmsProvider extends BaseKmsProvider {
 
     // Hardcoded master key and iv for testing
     const masterKey = Buffer
-      .from('2e1f761f30487e5d032c49f1002887a3a54485ce93b3ba32bddb94515ce3895f', 'hex')
+      .from('2e1f761f30487e5d032c49f1002887a3a54485ce93b3ba32bddb94515ce3895f', 'hex');
     const masterIv = Buffer
-      .from('8647ebebf1a43832709699b45ee7278d', 'hex')
+      .from('8647ebebf1a43832709699b45ee7278d', 'hex');
 
     this.masterKey = {
       key: masterKey,
