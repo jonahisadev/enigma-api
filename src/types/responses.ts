@@ -30,7 +30,7 @@ export interface VaultsListResponse {
 export interface SecretResponse {
   publicId: string;
   name: string;
-  value: string;
+  value?: string;
   version: number;
   createdAt: Date;
   updatedAt: Date;

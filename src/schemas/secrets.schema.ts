@@ -20,6 +20,7 @@ export const vaultIdParamSchema = z.object({
 
 export const getSecretsQuerySchema = z.object({
   name: z.string().optional(),
+  latest: z.coerce.boolean().optional(),
 });
 
 export const deleteSecretQuerySchema = z.object({

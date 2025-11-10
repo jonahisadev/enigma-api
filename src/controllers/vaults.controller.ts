@@ -6,6 +6,7 @@ import { BadRequestError, NotFoundError } from '../services/errors';
 import { v4 as uuid } from 'uuid';
 import { Vault } from '../models/vault.model';
 import { VaultRepository } from '../repositories/vault.repository';
+import { SecretRepository } from '../repositories/secret.repository';
 import { KmsFactory } from '../services/kms/factory';
 
 export async function createVault(
@@ -25,7 +26,7 @@ export async function createVault(
   }
 
   // Generate vault key
-  const kmsProvider = KmsFactory.createProvider(user.kmsProvider);
+  const kmsProvider = KmsFactory.createProvider(user.kmsProvider, user.accountKeyId);
   const vaultKey = await kmsProvider.generateVaultKey();
 
   // Save vault to database
@@ -132,6 +133,10 @@ export async function deleteVault(
     throw new NotFoundError(`Vault not found by ID ${vaultId}`);
   }
 
+  // Delete all secrets associated with this vault
+  await SecretRepository.delete({ vault: { id: vault.id } });
+
+  // Delete the vault
   await VaultRepository.delete(vault.id);
   return reply.status(200).send({ message: 'Vault deleted successfully' });
 }

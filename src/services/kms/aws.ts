@@ -1,16 +1,20 @@
-import { BaseKmsProvider, AesKey } from "./base";
+import { BaseKmsProvider } from "./base";
+import { AesKey } from "../crypto.service";
 
 export class AwsKmsProvider extends BaseKmsProvider {
 
-  constructor() {
+  private kmsKeyId: string;
+
+  constructor(kmsKeyId: string) {
     super();
+    this.kmsKeyId = kmsKeyId;
   }
 
   async generateVaultKey(): Promise<AesKey> {
     throw new Error("Method not implemented.");
   }
 
-  async decryptVaultKey(_encryptedKey: string): Promise<Buffer> {
+  async decryptVaultKey(_encryptedKey: string, _iv: string): Promise<AesKey> {
     throw new Error("Method not implemented.");
   }
 
