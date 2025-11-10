@@ -7,6 +7,7 @@ export class AwsKmsProvider extends BaseKmsProvider {
 
   constructor(kmsKeyId: string) {
     super();
+    this.kmsKeyId = kmsKeyId;
   }
 
   async generateVaultKey(): Promise<AesKey> {
