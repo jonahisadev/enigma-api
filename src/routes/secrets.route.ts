@@ -17,7 +17,9 @@ const routes = async (fastify: FastifyInstance) => {
 
   // GET /vaults/:vaultId/secrets - Get all secrets for a vault (can filter by name)
   fastify.get('/vaults/:vaultId/secrets', {
-    preHandler: authenticate,
+    preHandler: [
+      authenticate
+    ],
     schema: {
       params: vaultIdParamSchema,
       querystring: getSecretsQuerySchema,

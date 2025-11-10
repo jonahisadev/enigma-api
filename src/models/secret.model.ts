@@ -20,6 +20,9 @@ export class Secret extends Audit {
   @Column({ type: 'int', default: 1 })
   version: number;
 
+  @Column({ name: "is_latest", default: true })
+  latest: boolean;
+
   @ManyToOne(() => Vault, (vault) => vault.secrets)
   @JoinColumn({ name: "vault_id" })
   vault: Vault;

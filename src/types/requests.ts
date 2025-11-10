@@ -30,6 +30,7 @@ export interface UpdateSecretRequest {
 
 export interface GetSecretsQuery {
   name?: string;
+  latest?: boolean;
 }
 
 export interface DeleteSecretQuery {

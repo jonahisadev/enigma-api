@@ -1,5 +1,6 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
-import { BaseKmsProvider, AesKey } from "./base";
+import { randomBytes } from "crypto";
+import { BaseKmsProvider } from "./base";
+import { aesDecrypt, aesEncrypt, AesKey } from "../crypto.service";
 
 export class LocalKmsProvider extends BaseKmsProvider {
 
@@ -8,8 +9,9 @@ export class LocalKmsProvider extends BaseKmsProvider {
   constructor() {
     super();
 
+    // Hardcoded master key and iv for testing
     const masterKey = Buffer
-      .from('734D2C602B4141344B6F4C32475D212842607A70264268442F6C6C735929287C', 'hex')
+      .from('2e1f761f30487e5d032c49f1002887a3a54485ce93b3ba32bddb94515ce3895f', 'hex')
     const masterIv = Buffer
       .from('8647ebebf1a43832709699b45ee7278d', 'hex')
 
@@ -25,9 +27,7 @@ export class LocalKmsProvider extends BaseKmsProvider {
     const vaultIv = randomBytes(16);
 
     // Encrypt vault key with master key
-    const cipher = createCipheriv('aes-256-cbc', this.masterKey.key, this.masterKey.iv);
-    cipher.update(vaultKey);
-    const result = cipher.final();
+    const result = aesEncrypt(vaultKey, this.masterKey);
 
     // Return encrypted vault key and iv
     return {
@@ -36,14 +36,14 @@ export class LocalKmsProvider extends BaseKmsProvider {
     };
   }
 
-  async decryptVaultKey(encryptedKey: string): Promise<Buffer> {
+  async decryptVaultKey(encryptedKey: string, iv: string): Promise<AesKey> {
     // Decrypt vault key with master key
-    const cipher = createDecipheriv('aes-256-cbc', this.masterKey.key, this.masterKey.iv);
-    const encryptedKeyBuffer = Buffer.from(encryptedKey, 'base64');
-    cipher.update(encryptedKeyBuffer);
-    const decryptedKey = cipher.final();
+    const decryptedKey = aesDecrypt(Buffer.from(encryptedKey, 'base64'), this.masterKey);
 
     // Return decrypted vault key
-    return decryptedKey;
+    return {
+      key: decryptedKey,
+      iv: Buffer.from(iv, 'base64'),
+    };
   }
 }
