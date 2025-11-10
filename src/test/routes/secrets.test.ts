@@ -535,7 +535,8 @@ describe('Secret Routes', () => {
         user: mockUser,
       } as Vault;
 
-      const mockSecrets = [
+      // Mock only returns secrets with name 'secret-1' since filtering happens in DB
+      const filteredSecrets = [
         {
           id: 1,
           publicId: randomUUID(),
@@ -552,18 +553,10 @@ describe('Secret Routes', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         } as Secret,
-        {
-          id: 3,
-          publicId: randomUUID(),
-          name: 'secret-2',
-          version: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as Secret,
       ];
 
       (VaultRepository.findOne as any).mockResolvedValue(mockVault);
-      (SecretRepository.find as any).mockResolvedValue(mockSecrets);
+      (SecretRepository.find as any).mockResolvedValue(filteredSecrets);
 
       const accessToken = app.jwt.sign({ userId: mockUserId });
 
