@@ -985,5 +985,349 @@ describe('Secret Routes', () => {
       // Assert
       expect(response.statusCode).toBe(400);
     });
+
+    it('should successfully delete secret with role-based write access', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+      const mockVault = {
+        id: 1,
+        publicId: mockVaultId,
+        user: { publicId: mockUserId } as User,
+      } as Vault;
+
+      const mockSecrets = [
+        { id: 1, name: 'test-secret', version: 1 } as Secret,
+      ];
+
+      (VaultRepository.findOne as any).mockResolvedValue(mockVault);
+      (SecretRepository.find as any).mockResolvedValue(mockSecrets);
+      (SecretRepository.delete as any).mockResolvedValue({ affected: 1 });
+
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'token',
+        vaultPermissions: [{ vaultId: mockVaultId, canWrite: true }],
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/vaults/${mockVaultId}/secrets?name=test-secret`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.deletedCount).toBe(1);
+    });
+
+    it('should fail to delete secret with role-based read-only access', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'cidr',
+        vaultPermissions: [{ vaultId: mockVaultId, canWrite: false }],
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/vaults/${mockVaultId}/secrets?name=test-secret`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+
+    it('should fail to delete secret without permission', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'token',
+        vaultPermissions: [], // No permissions
+      });
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/vaults/${mockVaultId}/secrets?name=test-secret`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+  });
+
+  // Role-based access control tests for other secret operations
+  describe('Role-based access control for POST /vaults/:vaultId/secrets', () => {
+    it('should fail to create secret with read-only access', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'cidr',
+        vaultPermissions: [{ vaultId: mockVaultId, canWrite: false }],
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/vaults/${mockVaultId}/secrets`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+        payload: {
+          name: 'test-secret',
+          value: 'test-value',
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+
+    it('should fail to create secret without permission', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'token',
+        vaultPermissions: [], // No permissions
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/vaults/${mockVaultId}/secrets`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+        payload: {
+          name: 'test-secret',
+          value: 'test-value',
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+  });
+
+  describe('Role-based access control for GET /vaults/:vaultId/secrets/:secretId', () => {
+    it('should successfully retrieve secret with read-only access', async () => {
+      const mockVaultId = randomUUID();
+      const mockSecretId = randomUUID();
+      const mockUserId = randomUUID();
+
+      const mockVault = {
+        id: 1,
+        publicId: mockVaultId,
+        user: { publicId: mockUserId, kmsProvider: 'local', accountKeyId: 'test-key' } as User,
+        encryptionKey: 'encrypted-key',
+        keyIv: 'iv',
+      } as Vault;
+
+      const mockSecret = {
+        id: 1,
+        publicId: mockSecretId,
+        name: 'test-secret',
+        value: Buffer.from('test-value').toString('base64'),
+        version: 1,
+        vault: mockVault,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Secret;
+
+      (SecretRepository.findOne as any).mockResolvedValue(mockSecret);
+
+      const mockDecryptVaultKey = jest.fn();
+      (mockDecryptVaultKey as any).mockResolvedValue(Buffer.from('0123456789abcdef0123456789abcdef', 'hex'));
+
+      (KmsFactory.createProvider as jest.Mock).mockReturnValue({
+        decryptVaultKey: mockDecryptVaultKey,
+      });
+
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'token',
+        vaultPermissions: [{ vaultId: mockVaultId, canWrite: false }],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/vaults/${mockVaultId}/secrets/${mockSecretId}`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.name).toBe('test-secret');
+    });
+
+    it('should fail to retrieve secret without permission', async () => {
+      const mockVaultId = randomUUID();
+      const mockSecretId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'cidr',
+        vaultPermissions: [], // No permissions
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/vaults/${mockVaultId}/secrets/${mockSecretId}`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+  });
+
+  describe('Role-based access control for GET /vaults/:vaultId/secrets', () => {
+    it('should successfully list secrets with read-only access', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+
+      const mockVault = {
+        id: 1,
+        publicId: mockVaultId,
+        user: { publicId: mockUserId } as User,
+      } as Vault;
+
+      const mockSecrets = [
+        {
+          id: 1,
+          publicId: randomUUID(),
+          name: 'secret-1',
+          version: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as Secret,
+      ];
+
+      (VaultRepository.findOne as any).mockResolvedValue(mockVault);
+      (SecretRepository.find as any).mockResolvedValue(mockSecrets);
+
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'token',
+        vaultPermissions: [{ vaultId: mockVaultId, canWrite: false }],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/vaults/${mockVaultId}/secrets`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.secrets).toHaveLength(1);
+    });
+
+    it('should fail to list secrets without permission', async () => {
+      const mockVaultId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'cidr',
+        vaultPermissions: [], // No permissions
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/vaults/${mockVaultId}/secrets`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+  });
+
+  describe('Role-based access control for PUT /vaults/:vaultId/secrets/:secretId', () => {
+    it('should fail to update secret with read-only access', async () => {
+      const mockVaultId = randomUUID();
+      const mockSecretId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'token',
+        vaultPermissions: [{ vaultId: mockVaultId, canWrite: false }],
+      });
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: `/vaults/${mockVaultId}/secrets/${mockSecretId}`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+        payload: {
+          value: 'new-value',
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
+
+    it('should fail to update secret without permission', async () => {
+      const mockVaultId = randomUUID();
+      const mockSecretId = randomUUID();
+      const mockUserId = randomUUID();
+      const accessToken = app.jwt.sign({
+        userId: mockUserId,
+        roleId: randomUUID(),
+        authType: 'cidr',
+        vaultPermissions: [], // No permissions
+      });
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: `/vaults/${mockVaultId}/secrets/${mockSecretId}`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+        payload: {
+          value: 'new-value',
+        },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('Vault not found');
+    });
   });
 });
