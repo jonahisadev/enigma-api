@@ -21,3 +21,30 @@ export const validateCidrs = (cidrs: string[]): boolean => {
 
   return true;
 }
+
+export const validateAddress = (address: string, cidrs: string[]): boolean => {
+  // Parse the input address
+  const parsedAddress = parseCidr(address);
+
+  // Check if address matches any of the CIDR blocks
+  for (const cidr of cidrs) {
+    const parsedCidr = parseCidr(cidr);
+
+    if (!parsedCidr) {
+      continue; // Skip invalid CIDR blocks
+    }
+
+    // Check if both are same IP version (v4 or v6)
+    if (
+      (parsedAddress instanceof Address4 && parsedCidr instanceof Address4) ||
+      (parsedAddress instanceof Address6 && parsedCidr instanceof Address6)
+    ) {
+      // Check if address is within the CIDR block
+      if (parsedAddress.isInSubnet(parsedCidr)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}

@@ -1,0 +1,3 @@
+name: Login with CIDR
+method: POST
+url: ${API_HOST}/roles/$role_id/login/cidr

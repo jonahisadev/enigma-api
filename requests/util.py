@@ -16,3 +16,7 @@ def create_auth_method(response, posting):
 
 def create_token(response, posting):
     posting.set_variable("auth_method_id", response.json()['publicId'])
+    posting.set_variable("role_token", response.json()['token'])
+
+def get_token(response, posting):
+    posting.set_variable("role_token_id", response.json()['tokens'][0]['publicId'])

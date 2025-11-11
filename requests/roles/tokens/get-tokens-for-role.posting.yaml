@@ -4,3 +4,5 @@ auth:
   type: bearer_token
   bearer_token:
     token: $bearer_token
+scripts:
+  on_response: util.py:get_token

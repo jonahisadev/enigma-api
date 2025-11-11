@@ -1,6 +1,6 @@
 name: Revoke Token
 method: DELETE
-url: ${API_HOST}/roles/$role_id/tokens/7d4eec50-bde2-4a9f-8e86-2b327133b52c
+url: ${API_HOST}/roles/$role_id/tokens/$role_token_id
 auth:
   type: bearer_token
   bearer_token:

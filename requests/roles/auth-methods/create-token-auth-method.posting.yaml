@@ -19,4 +19,4 @@ headers:
 - name: content-type
   value: application/json
 scripts:
-  on_response: util.py:create_auth_method
+  on_response: util.py:create_token

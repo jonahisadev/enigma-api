@@ -254,7 +254,7 @@ describe('Secret Routes', () => {
       });
 
       // Assert
-      expect(response.statusCode).toBe(400);
+      expect(response.statusCode).toBe(409);
       const body = JSON.parse(response.body);
       expect(body.reason).toContain('already exists');
     });

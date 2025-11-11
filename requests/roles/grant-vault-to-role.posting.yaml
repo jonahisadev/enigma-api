@@ -4,7 +4,8 @@ url: ${API_HOST}/roles/$role_id/vaults
 body:
   content: |-
     {
-      "vaultId": "$vault_id"
+      "vaultId": "$vault_id",
+      "canWrite": false
     }
   content_type: application/json
 auth:

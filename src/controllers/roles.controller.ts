@@ -28,6 +28,7 @@ import { VaultRepository } from '../repositories/vault.repository';
 import { RoleVaultPermissionRepository } from '../repositories/role-vault-permission.repository';
 import { RoleVaultPermission } from '../models/role_vault_permission.model';
 import { RoleTokenRepository } from '../repositories/role-token.repository';
+import { RoleToken } from '../models/role_token.model';
 
 export async function createRole(
   request: FastifyRequest<{ Body: CreateRoleRequest }>,
@@ -243,7 +244,7 @@ export async function addAuthMethod(
       roleAuthMethod.role = role;
       roleAuthMethod.authType = 'token';
       roleAuthMethod.config = { lifetime: config.lifetime };
-      roleAuthMethod.tokens = [{ id: tokenResponse.id } as any];
+      roleAuthMethod.tokens = [{ id: tokenResponse.id } as RoleToken];
       await RoleAuthMethodRepository.save(roleAuthMethod);
 
       return reply.status(201).send({
