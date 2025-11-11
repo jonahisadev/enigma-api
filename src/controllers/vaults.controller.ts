@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateVaultRequest, UpdateVaultRequest } from '../types/requests';
 import { VaultResponse, VaultsListResponse } from '../types/responses';
 import { UserRepository } from '../repositories/user.repository';
-import { BadRequestError, NotFoundError } from '../services/errors';
+import { BadRequestError, ConflictError, NotFoundError } from '../services/errors';
 import { v4 as uuid } from 'uuid';
 import { Vault } from '../models/vault.model';
 import { VaultRepository } from '../repositories/vault.repository';
@@ -23,6 +23,19 @@ export async function createVault(
 
   if (!user) {
     throw new BadRequestError("Invalid request");
+  }
+
+  const existingVault = await VaultRepository.findOne({
+    where: {
+      name,
+      user: {
+        publicId: request.user.userId
+      }
+    }
+  });
+
+  if (existingVault) {
+    throw new ConflictError(`Vault with name ${name} already exists`);
   }
 
   // Generate vault key

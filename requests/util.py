@@ -7,3 +7,12 @@ def create_vault(response, posting):
 
 def create_secret(response, posting):
     posting.set_variable("secret_id", response.json()['publicId'])
+
+def create_role(response, posting):
+    posting.set_variable("role_id", response.json()['publicId'])
+
+def create_auth_method(response, posting):
+    posting.set_variable("auth_method_id", response.json()['publicId'])
+
+def create_token(response, posting):
+    posting.set_variable("auth_method_id", response.json()['publicId'])

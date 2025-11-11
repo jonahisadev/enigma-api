@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateSecretRequest, UpdateSecretRequest, GetSecretsQuery, DeleteSecretQuery } from '../types/requests';
 import { SecretResponse, SecretsListResponse, DeleteSecretResponse } from '../types/responses';
 import { VaultRepository } from '../repositories/vault.repository';
-import { BadRequestError, NotFoundError } from '../services/errors';
+import { ConflictError, NotFoundError } from '../services/errors';
 import { Secret } from '../models/secret.model';
 import { v4 as uuid } from 'uuid';
 import { KmsFactory } from '../services/kms/factory';
@@ -30,7 +30,7 @@ export async function createSecret(
   });
 
   if (existingSecret) {
-    throw new BadRequestError(`Secret with name ${name} already exists in vault ${vaultId}`);
+    throw new ConflictError(`Secret with name ${name} already exists in vault ${vaultId}`);
   }
 
   // Encrypt secret value with vault key

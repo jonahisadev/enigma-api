@@ -1,0 +1,24 @@
+name: Create CIDR Auth Method
+method: POST
+url: ${API_HOST}/roles/$role_id/auth-methods
+body:
+  content: |-
+    {
+      "authType": "cidr",
+      "config": {
+        "allowedCidrs": [
+          "127.0.0.1/32",
+          "192.168.0.48/32"
+        ]
+      }
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:create_auth_method

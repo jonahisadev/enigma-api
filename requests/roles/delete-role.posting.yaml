@@ -1,0 +1,7 @@
+name: Delete Role
+method: DELETE
+url: ${API_HOST}/roles/$role_id
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token

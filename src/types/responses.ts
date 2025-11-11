@@ -50,6 +50,7 @@ export interface RoleResponse {
   publicId: string;
   name: string;
   description?: string;
+  vaultIds?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,7 +60,6 @@ export interface RolesListResponse {
 }
 
 export interface AuthMethodResponse {
-  id: number;
   authType: 'cidr' | 'token';
   config: {
     allowedCidrs?: string[];
@@ -75,6 +75,7 @@ export interface AuthMethodsListResponse {
 
 export interface TokenAuthMethodResponse extends AuthMethodResponse {
   publicId: string;
+  name?: string;
   token: string;
   expiresAt: Date;
 }
@@ -83,7 +84,6 @@ export interface VaultPermissionResponse {
   vaultId: string;
   vaultName: string;
   canWrite: boolean;
-  createdAt: Date;
 }
 
 export interface VaultPermissionsListResponse {

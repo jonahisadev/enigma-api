@@ -1,0 +1,6 @@
+name: Get Tokens for Role
+url: ${API_HOST}/roles/$role_id/tokens
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token

@@ -18,6 +18,9 @@ export class RoleAuthMethod extends Audit {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'public_id', unique: true })
+  publicId: string;
+
   @Column({ type: 'text', name: 'auth_type' })
   authType: AuthType;
 

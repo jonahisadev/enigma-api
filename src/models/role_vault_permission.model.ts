@@ -8,6 +8,9 @@ export class RoleVaultPermission extends Audit {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'public_id', unique: true })
+  publicId: string;
+
   @Column({ name: 'can_write', default: false })
   canWrite: boolean;
 

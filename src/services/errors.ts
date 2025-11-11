@@ -17,6 +17,12 @@ export class UnauthorizedError extends RestError {
   }
 }
 
+export class ForbiddenError extends RestError {
+  constructor(reason: string) {
+    super(reason, 403);
+  }
+}
+
 export class NotFoundError extends RestError {
   constructor(reason: string) {
     super(reason, 404);
