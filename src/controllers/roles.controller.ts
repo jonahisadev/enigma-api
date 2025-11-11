@@ -83,7 +83,7 @@ export async function getRoles(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<RolesListResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view roles');
   }
@@ -111,7 +111,7 @@ export async function getRole(
   request: FastifyRequest<{ Params: { roleId: string } }>,
   reply: FastifyReply
 ): Promise<RoleResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view roles');
   }
@@ -144,7 +144,7 @@ export async function updateRole(
   request: FastifyRequest<{ Params: { roleId: string }; Body: UpdateRoleRequest }>,
   reply: FastifyReply
 ): Promise<RoleResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to update roles');
   }
@@ -180,7 +180,7 @@ export async function deleteRole(
   request: FastifyRequest<{ Params: { roleId: string } }>,
   reply: FastifyReply
 ): Promise<{ message: string }> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to delete roles');
   }
@@ -289,7 +289,7 @@ export async function getAuthMethods(
   request: FastifyRequest<{ Params: { roleId: string } }>,
   reply: FastifyReply
 ): Promise<AuthMethodsListResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
@@ -351,7 +351,7 @@ export async function removeAuthMethod(
   request: FastifyRequest<{ Params: { roleId: string; id: string } }>,
   reply: FastifyReply
 ): Promise<{ message: string }> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
@@ -393,7 +393,7 @@ export async function grantVaultAccess(
   request: FastifyRequest<{ Params: { roleId: string }; Body: GrantVaultAccessRequest }>,
   reply: FastifyReply
 ): Promise<{ message: string }> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
@@ -441,14 +441,14 @@ export async function grantVaultAccess(
 
   return reply.status(201).send({
     message: `Vault access granted with ID ${result.publicId}`,
-  })
+  });
 }
 
 export async function getVaultPermissions(
   request: FastifyRequest<{ Params: { roleId: string } }>,
   reply: FastifyReply
 ): Promise<VaultPermissionsListResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
@@ -487,7 +487,7 @@ export async function updateVaultPermission(
   }>,
   reply: FastifyReply
 ): Promise<{ message: string }> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
@@ -528,7 +528,7 @@ export async function revokeVaultAccess(
   request: FastifyRequest<{ Params: { roleId: string; vaultId: string } }>,
   reply: FastifyReply
 ): Promise<{ message: string }> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
@@ -572,7 +572,7 @@ export async function listTokens(
   request: FastifyRequest<{ Params: { roleId: string } }>,
   reply: FastifyReply
 ): Promise<RoleTokensListResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }

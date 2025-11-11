@@ -37,7 +37,7 @@ export async function cidrLogin(
   // Validate client IP
   let clientIp = request.ip;
   if (request.headers['x-forwarded-for']) {
-    clientIp = request.headers['x-forwarded-for'].toString()
+    clientIp = request.headers['x-forwarded-for'].toString();
   }
 
   const valid = validateAddress(clientIp, blocks);
@@ -57,7 +57,7 @@ export async function cidrLogin(
 
   return reply.status(200).send({
     accessToken: jwt,
-  })
+  });
 }
 
 export async function tokenLogin(

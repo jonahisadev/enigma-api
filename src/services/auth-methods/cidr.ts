@@ -1,4 +1,4 @@
-import { Address4, Address6 } from 'ip-address'
+import { Address4, Address6 } from 'ip-address';
 
 const parseCidr = (cidr: string): Address4 | Address6 | null => {
   try {
@@ -10,7 +10,7 @@ const parseCidr = (cidr: string): Address4 | Address6 | null => {
       return null;
     }
   }
-}
+};
 
 export const validateCidrs = (cidrs: string[]): boolean => {
   for (const cidr of cidrs) {
@@ -20,7 +20,7 @@ export const validateCidrs = (cidrs: string[]): boolean => {
   }
 
   return true;
-}
+};
 
 export const validateAddress = (address: string, cidrs: string[]): boolean => {
   // Parse the input address
@@ -47,4 +47,4 @@ export const validateAddress = (address: string, cidrs: string[]): boolean => {
   }
 
   return false;
-}
+};

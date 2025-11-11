@@ -14,5 +14,5 @@ export class RefreshToken extends Audit {
   expiresAt: Date;
 
   @ManyToOne(() => User, (user) => user.refreshTokens)
-  user: User
+  user: User;
 }

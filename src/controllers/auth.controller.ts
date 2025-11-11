@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { LoginRequest, RefreshTokenRequest, RevokeTokenRequest } from '../types/requests';
 import { LoginResponse, RefreshTokenResponse, RevokeTokenResponse } from '../types/responses';
 import { UserRepository } from '../repositories/user.repository';
-import { compareSync } from 'bcrypt'
+import { compareSync } from 'bcrypt';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
 import { BadRequestError } from '../services/errors';
 import { generateAccessToken, generateRefreshToken, formatUserResponse } from '../services/auth.service';

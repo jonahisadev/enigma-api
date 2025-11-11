@@ -4,7 +4,7 @@ import { RoleTokenRepository } from "../../repositories/role-token.repository";
 import { v4 as uuid } from "uuid";
 import { Role } from "../../models/role.model";
 import { DateTime } from "luxon";
-import parse from 'parse-duration'
+import parse from 'parse-duration';
 
 export interface CreateTokenOpts {
   role: Role;
@@ -41,4 +41,4 @@ export const createToken = async (opts: CreateTokenOpts): Promise<TokenResponse>
     token: tokenData,
     expiresAt: result.expiresAt,
   };
-}
+};
