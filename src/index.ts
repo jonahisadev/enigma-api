@@ -10,6 +10,7 @@ import secrets from "./routes/secrets.route";
 import roles from "./routes/roles.route";
 import roleAuth from "./routes/role-auth.route";
 import { errorHandler } from "./services/errors";
+import { loadSecret } from "./utils/config";
 
 const fastify = Fastify({
   logger: true,
@@ -19,9 +20,12 @@ const fastify = Fastify({
 fastify.setValidatorCompiler(validatorCompiler);
 fastify.setSerializerCompiler(serializerCompiler);
 
+// Load JWT secret from environment or file
+const jwtSecret = loadSecret('JWT_SECRET', 'JWT_SECRET_FILE') || 'your-secret-key-change-this-in-production';
+
 // Register JWT plugin
 fastify.register(jwt, {
-  secret: process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
+  secret: jwtSecret,
   sign: {
     expiresIn: '15m', // Access token expires in 15 minutes
   },
