@@ -8,12 +8,17 @@ import { Vault } from '../models/vault.model';
 import { VaultRepository } from '../repositories/vault.repository';
 import { SecretRepository } from '../repositories/secret.repository';
 import { KmsFactory } from '../services/kms/factory';
+import { getVaultAccess } from '../services/auth.service';
 
 export async function createVault(
   request: FastifyRequest<{ Body: CreateVaultRequest }>,
   reply: FastifyReply
 ): Promise<VaultResponse> {
   const { name } = request.body;
+  const { isAdmin } = getVaultAccess(request.user, '');
+  if (!isAdmin) {
+    throw new BadRequestError('Insufficient permissions to create vault');
+  }
 
   const user = await UserRepository.findOne({
     where: {
@@ -65,14 +70,19 @@ export async function getVault(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ): Promise<VaultResponse> {
-  const { id: publicId } = request.params;
+  const { id: vaultId } = request.params;
+  const { hasAccess } = getVaultAccess(request.user, vaultId);
+  if (!hasAccess) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
+
   const vault = await VaultRepository.findOne({
-    where: { publicId },
+    where: { publicId: vaultId },
     relations: ['user'],
   });
 
   if (!vault || vault.user.publicId !== request.user.userId) {
-    throw new NotFoundError(`Vault not found by ID ${publicId}`);
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
   }
 
   return reply.status(200).send({
@@ -96,8 +106,14 @@ export async function getVaults(
     }
   });
 
+  let results = vaults;
+  if (request.user.authType !== 'password') {
+    const allowedVaults = request.user.vaultPermissions?.map(vp => vp.vaultId);
+    results = vaults.filter(vault => allowedVaults?.includes(vault.publicId));
+  }
+
   return reply.status(200).send({
-    vaults: vaults.map(vault => ({
+    vaults: results.map(vault => ({
       publicId: vault.publicId,
       name: vault.name,
       createdAt: vault.createdAt,
@@ -111,6 +127,10 @@ export async function updateVault(
   reply: FastifyReply
 ): Promise<VaultResponse> {
   const { name } = request.body;
+  const { hasAccess, canWrite } = getVaultAccess(request.user, request.params.id);
+  if (!hasAccess || !canWrite) {
+    throw new NotFoundError(`Vault not found by ID ${request.params.id}`);
+  }
 
   const vault = await VaultRepository.findOne({
     where: { publicId: request.params.id },
@@ -137,6 +157,11 @@ export async function deleteVault(
   reply: FastifyReply
 ): Promise<{ message: string }> {
   const { id: vaultId } = request.params;
+  const { hasAccess, canWrite } = getVaultAccess(request.user, vaultId);
+  if (!hasAccess || !canWrite) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
+
   const vault = await VaultRepository.findOne({
     where: { publicId: vaultId },
     relations: ['user'],

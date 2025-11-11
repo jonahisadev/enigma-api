@@ -20,3 +20,6 @@ def create_token(response, posting):
 
 def get_token(response, posting):
     posting.set_variable("role_token_id", response.json()['tokens'][0]['publicId'])
+
+def login_with_role(response, posting):
+    posting.set_variable("role_bearer_token", response.json()['accessToken'])

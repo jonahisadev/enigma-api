@@ -6,30 +6,22 @@ export interface VaultPermission {
   canWrite: boolean;
 }
 
+export interface UserPayload {
+  userId: string;
+  roleId?: string;
+  vaultPermissions?: VaultPermission[];
+  authType: 'password' | 'cidr' | 'token';
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
-    user: {
-      userId: string;
-      roleId?: string;
-      vaultPermissions?: VaultPermission[];
-      authType: 'password' | 'cidr' | 'token';
-    };
+    user: UserPayload;
   }
 }
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: {
-      userId: string;
-      roleId?: string;
-      vaultPermissions?: VaultPermission[];
-      authType: 'password' | 'cidr' | 'token';
-    };
-    user: {
-      userId: string;
-      roleId?: string;
-      vaultPermissions?: VaultPermission[];
-      authType: 'password' | 'cidr' | 'token';
-    };
+    payload: UserPayload;
+    user: UserPayload;
   }
 }

@@ -8,14 +8,19 @@ import { v4 as uuid } from 'uuid';
 import { KmsFactory } from '../services/kms/factory';
 import { aesDecrypt, aesEncrypt } from '../services/crypto.service';
 import { SecretRepository } from '../repositories/secret.repository';
+import { getVaultAccess } from '../services/auth.service';
 
 export async function createSecret(
   request: FastifyRequest<{ Params: { vaultId: string }; Body: CreateSecretRequest }>,
   reply: FastifyReply
 ): Promise<SecretResponse> {
   const vaultId = request.params.vaultId;
-  const { name, value } = request.body;
+  const { hasAccess, canWrite } = getVaultAccess(request.user, vaultId);
+  if (!hasAccess || !canWrite) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
 
+  const { name, value } = request.body;
   const vault = await VaultRepository.findOne({
     where: { publicId: vaultId },
     relations: ['user'],
@@ -61,6 +66,11 @@ export async function getSecret(
   reply: FastifyReply
 ): Promise<SecretResponse> {
   const { secretId, vaultId } = request.params;
+  const { hasAccess } = getVaultAccess(request.user, vaultId);
+  if (!hasAccess) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
+
   const secret = await SecretRepository.findOne({
     where: { publicId: secretId },
     relations: ['vault', 'vault.user'],
@@ -94,6 +104,11 @@ export async function getSecrets(
 ): Promise<SecretsListResponse> {
   const { vaultId } = request.params;
   const { name, latest } = request.query;
+  const { hasAccess } = getVaultAccess(request.user, vaultId);
+
+  if (!hasAccess) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
 
   const vault = await VaultRepository.findOne({
     where: { publicId: vaultId },
@@ -131,6 +146,10 @@ export async function updateSecret(
 ): Promise<SecretResponse> {
   const { vaultId } = request.params;
   const { value } = request.body;
+  const { hasAccess, canWrite } = getVaultAccess(request.user, vaultId);
+  if (!hasAccess || !canWrite) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
 
   const vault = await VaultRepository.findOne({
     where: { publicId: vaultId },
@@ -188,6 +207,10 @@ export async function deleteSecret(
 ): Promise<DeleteSecretResponse> {
   const { vaultId } = request.params;
   const { name } = request.query;
+  const { hasAccess, canWrite } = getVaultAccess(request.user, vaultId);
+  if (!hasAccess || !canWrite) {
+    throw new NotFoundError(`Vault not found by ID ${vaultId}`);
+  }
 
   const vault = await VaultRepository.findOne({
     where: { publicId: vaultId },

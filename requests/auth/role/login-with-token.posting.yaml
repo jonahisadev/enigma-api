@@ -10,3 +10,5 @@ body:
 headers:
 - name: content-type
   value: application/json
+scripts:
+  on_response: util.py:login_with_role
