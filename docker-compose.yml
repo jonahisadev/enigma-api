@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/jonahisadev/nothing:latest
+    image: ghcr.io/jonahisadev/enigma-api:latest
     secrets:
       - jwt_secret
       - database_url
