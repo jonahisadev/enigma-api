@@ -1,0 +1,6 @@
+name: Get Role Vaults
+url: ${API_HOST}/roles/$role_id/vaults
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token

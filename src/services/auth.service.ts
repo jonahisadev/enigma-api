@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { User } from '../models/user.model';
 import { RefreshToken } from '../models/refresh_token.model';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
+import { UserPayload } from '../types/fastify';
 
 /**
  * Generate a JWT access token for a user
@@ -36,4 +37,23 @@ export function formatUserResponse(user: User) {
     name: user.name,
     email: user.email,
   };
+}
+
+export interface VaultAccessResult {
+  isAdmin: boolean;
+  hasAccess: boolean;
+  canWrite: boolean;
+}
+
+export function getVaultAccess(payload: UserPayload, vaultId: string): VaultAccessResult {
+  if (payload.authType === 'password') {
+    return { isAdmin: true, hasAccess: true, canWrite: true };
+  }
+
+  const permission = payload.vaultPermissions?.find(vp => vp.vaultId === vaultId);
+  if (permission) {
+    return { isAdmin: false, hasAccess: true, canWrite: permission.canWrite };
+  }
+
+  return { isAdmin: false, hasAccess: false, canWrite: false };
 }

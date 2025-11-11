@@ -1,0 +1,7 @@
+name: Revoke Vault Access for Role
+method: DELETE
+url: ${API_HOST}/roles/$role_id/vaults/$vault_id
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token

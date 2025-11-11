@@ -1,44 +1,109 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { TokenLoginRequest } from '../types/requests';
 import { RoleLoginResponse } from '../types/responses';
+import { RoleRepository } from '../repositories/role.repository';
+import { NotFoundError, UnauthorizedError } from '../services/errors';
+import { RoleAuthMethodRepository } from '../repositories/role-auth-method.repository';
+import { validateAddress } from '../services/auth-methods/cidr';
+import { createHash } from 'crypto';
 
-// TODO: Implement CIDR-based login
-// 1. Find role by publicId from params
-// 2. Find RoleAuthMethod where roleId matches and authType = 'cidr'
-// 3. Extract client IP from request.ip or X-Forwarded-For header
-// 4. Validate IP is within one of the allowedCidrs (use ipaddr.js library)
-// 5. Query RoleVaultPermissionRepository to get accessible vaults with canWrite flags
-// 6. Generate JWT with:
-//    - userId: role.user.publicId
-//    - roleId: role.publicId
-//    - vaultPermissions: [{ vaultId, canWrite }, ...]
-//    - authType: 'cidr'
-// 7. Return RoleLoginResponse with accessToken
-// 8. Throw UnauthorizedError if IP not in allowed ranges or auth method not found
 export async function cidrLogin(
-  _request: FastifyRequest<{ Params: { roleId: string } }>,
-  _reply: FastifyReply
+  request: FastifyRequest<{ Params: { roleId: string } }>,
+  reply: FastifyReply
 ): Promise<RoleLoginResponse> {
-  throw new Error('Not implemented');
+  const { roleId } = request.params;
+  const role = await RoleRepository.findOne({
+    where: { publicId: roleId },
+    relations: ['vaultPermissions', 'vaultPermissions.vault', 'user']
+  });
+
+  if (!role) {
+    throw new NotFoundError(`Role not found by ID ${roleId}`);
+  }
+
+  // Gather CIDR blocks
+  const blocks: string[] = [];
+  const authMethods = await RoleAuthMethodRepository.find({
+    where: {
+      role: { id: role.id },
+      authType: 'cidr'
+    }
+  });
+  for (const method of authMethods) {
+    const config = method.config as { allowedCidrs: string[] };
+    blocks.push(...config.allowedCidrs);
+  }
+
+  // Validate client IP
+  let clientIp = request.ip;
+  if (request.headers['x-forwarded-for']) {
+    clientIp = request.headers['x-forwarded-for'].toString()
+  }
+
+  const valid = validateAddress(clientIp, blocks);
+  if (!valid) {
+    throw new UnauthorizedError('Client IP rejected');
+  }
+
+  const jwt = request.server.jwt.sign({
+    userId: role.user.publicId,
+    roleId: role.publicId,
+    vaultPermissions: role.vaultPermissions.map(vp => ({
+      vaultId: vp.vault.publicId,
+      canWrite: vp.canWrite
+    })),
+    authType: 'cidr',
+  });
+
+  return reply.status(200).send({
+    accessToken: jwt,
+  })
 }
 
-// TODO: Implement token-based login
-// 1. Find role by publicId from params
-// 2. Find RoleAuthMethod where roleId matches and authType = 'token'
-// 3. Extract token from request body
-// 4. Query RoleTokenRepository for tokens belonging to this auth method
-// 5. For each token:
-//    a. Compare request token with tokenHash using bcrypt.compare()
-//    b. Check if token is expired (expiresAt < now)
-//    c. Check if token is revoked
-// 6. If valid token found:
-//    a. Query RoleVaultPermissionRepository to get accessible vaults
-//    b. Generate JWT with userId, roleId, vaultPermissions, authType: 'token'
-//    c. Return RoleLoginResponse with accessToken
-// 7. Throw UnauthorizedError if token invalid, expired, revoked, or not found
 export async function tokenLogin(
-  _request: FastifyRequest<{ Params: { roleId: string }; Body: TokenLoginRequest }>,
-  _reply: FastifyReply
+  request: FastifyRequest<{ Params: { roleId: string }; Body: TokenLoginRequest }>,
+  reply: FastifyReply
 ): Promise<RoleLoginResponse> {
-  throw new Error('Not implemented');
+  const { roleId } = request.params;
+  const role = await RoleRepository.findOne({
+    where: { publicId: roleId },
+    relations: ['vaultPermissions', 'vaultPermissions.vault', 'user']
+  });
+
+  if (!role) {
+    throw new NotFoundError(`Role not found by ID ${roleId}`);
+  }
+
+  const { token } = request.body;
+  const tokenHash = createHash('sha256').update(token).digest('base64');
+
+  const authMethods = await RoleAuthMethodRepository.find({
+    where: {
+      role: { id: role.id },
+      authType: 'token'
+    },
+    relations: ['tokens']
+  });
+
+  const validToken = authMethods.flatMap(method => method.tokens).find(rt => {
+    return rt.tokenHash === tokenHash && !rt.revoked && rt.expiresAt > new Date();
+  });
+
+  if (!validToken) {
+    throw new UnauthorizedError('Invalid token');
+  }
+
+  const jwt = request.server.jwt.sign({
+    userId: role.user.publicId,
+    roleId: role.publicId,
+    vaultPermissions: role.vaultPermissions.map(vp => ({
+      vaultId: vp.vault.publicId,
+      canWrite: vp.canWrite
+    })),
+    authType: 'token',
+  });
+
+  return reply.status(200).send({
+    accessToken: jwt,
+  })
 }
