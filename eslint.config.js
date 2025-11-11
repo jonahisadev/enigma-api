@@ -42,6 +42,7 @@ module.exports = [
       "no-var": "error",
       "object-shorthand": "error",
       "prefer-arrow-callback": "error",
+      "semi": ["error", "always"],
     },
   },
   {
@@ -82,6 +83,7 @@ module.exports = [
       "no-var": "error",
       "object-shorthand": "error",
       "prefer-arrow-callback": "error",
+      "semi": ["error", "always"],
     },
   },
   {
@@ -89,7 +91,8 @@ module.exports = [
       "dist/",
       "node_modules/",
       "coverage/",
-      "src/test/setup.ts",
+      "src/test/**/*",
+      "scripts/**/*",
       "jest.config.js",
       "eslint.config.js",
     ],

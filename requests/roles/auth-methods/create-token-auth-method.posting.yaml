@@ -1,0 +1,22 @@
+name: Create Token Auth Method
+method: POST
+url: ${API_HOST}/roles/$role_id/auth-methods
+body:
+  content: |-
+    {
+      "authType": "token",
+      "config": {
+        "name": "my-auth-token",
+        "lifetime": "7d"
+      }
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:create_token

@@ -1,0 +1,13 @@
+name: Revoke All Refresh Tokens
+method: POST
+url: ${API_HOST}/accounts/login/revoke
+body:
+  content: '{}'
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json

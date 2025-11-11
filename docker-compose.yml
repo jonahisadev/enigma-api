@@ -1,8 +1,19 @@
 services:
   app:
     image: ghcr.io/jonahisadev/nothing:latest
+    secrets:
+      - jwt_secret
+      - database_url
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
       - PORT=3000
+      - JWT_SECRET_FILE=/run/secrets/jwt_secret
+      - DATABASE_URL_FILE=/run/secrets/database_url
+
+secrets:
+  jwt_secret:
+    external: true
+  database_url:
+    external: true

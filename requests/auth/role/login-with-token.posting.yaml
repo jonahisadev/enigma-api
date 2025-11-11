@@ -1,0 +1,14 @@
+name: Login with Token
+method: POST
+url: ${API_HOST}/roles/$role_id/login/token
+body:
+  content: |-
+    {
+      "token": "$role_token"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:login_with_role

@@ -1,0 +1,16 @@
+name: Update Vault
+method: PUT
+url: ${API_HOST}/vaults/$vault_id
+body:
+  content: |-
+    {
+      "name": "another-vault"
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json

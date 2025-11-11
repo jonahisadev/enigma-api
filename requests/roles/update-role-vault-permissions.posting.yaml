@@ -1,0 +1,16 @@
+name: Update Role Vault Permissions
+method: PUT
+url: ${API_HOST}/roles/$role_id/vaults/$vault_id
+body:
+  content: |-
+    {
+      "canWrite": true
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json

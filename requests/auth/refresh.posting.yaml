@@ -1,0 +1,14 @@
+name: Refresh JWT
+method: POST
+url: ${API_HOST}/accounts/login/refresh
+body:
+  content: |-
+    {
+      "refreshToken": "$refresh_token"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:log_in

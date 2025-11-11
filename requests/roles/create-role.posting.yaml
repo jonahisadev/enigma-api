@@ -1,0 +1,19 @@
+name: Create Role
+method: POST
+url: ${API_HOST}/roles
+body:
+  content: |-
+    {
+      "name": "test-role",
+      "description": "This is a test role for testing purposes"
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json
+scripts:
+  on_response: util.py:create_role

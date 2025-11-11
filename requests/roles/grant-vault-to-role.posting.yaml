@@ -1,0 +1,17 @@
+name: Grant Vault to Role
+method: POST
+url: ${API_HOST}/roles/$role_id/vaults
+body:
+  content: |-
+    {
+      "vaultId": "$vault_id",
+      "canWrite": false
+    }
+  content_type: application/json
+auth:
+  type: bearer_token
+  bearer_token:
+    token: $bearer_token
+headers:
+- name: content-type
+  value: application/json

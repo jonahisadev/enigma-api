@@ -1,0 +1,5 @@
+name: Login with CIDR
+method: POST
+url: ${API_HOST}/roles/$role_id/login/cidr
+scripts:
+  on_response: util.py:login_with_role
