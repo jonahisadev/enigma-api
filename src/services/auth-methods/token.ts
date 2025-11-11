@@ -40,5 +40,5 @@ export const createToken = async (opts: CreateTokenOpts): Promise<TokenResponse>
     publicId: result.publicId,
     token: tokenData,
     expiresAt: result.expiresAt,
-  }
+  };
 }

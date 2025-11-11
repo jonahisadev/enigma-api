@@ -105,5 +105,5 @@ export async function tokenLogin(
 
   return reply.status(200).send({
     accessToken: jwt,
-  })
+  });
 }

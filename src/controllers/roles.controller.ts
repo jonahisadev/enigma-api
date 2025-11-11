@@ -34,7 +34,7 @@ export async function createRole(
   request: FastifyRequest<{ Body: CreateRoleRequest }>,
   reply: FastifyReply
 ): Promise<RoleResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to create roles');
   }
@@ -207,7 +207,7 @@ export async function addAuthMethod(
   request: FastifyRequest<{ Params: { roleId: string }; Body: AddAuthMethodRequest }>,
   reply: FastifyReply
 ): Promise<AuthMethodResponse | TokenAuthMethodResponse> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to add auth methods');
   }
@@ -612,7 +612,7 @@ export async function revokeToken(
   request: FastifyRequest<{ Params: { roleId: string; tokenId: string } }>,
   reply: FastifyReply
 ): Promise<{ message: string }> {
-  const isAdmin = request.user.authType === 'password'
+  const isAdmin = request.user.authType === 'password';
   if (!isAdmin) {
     throw new ForbiddenError('Not authorized to view auth methods');
   }
