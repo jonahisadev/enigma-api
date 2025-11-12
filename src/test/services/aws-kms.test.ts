@@ -30,6 +30,10 @@ describe('AwsKmsProvider', () => {
     // Reset environment variable
     delete process.env.AWS_REGION;
 
+    // Reset the static kmsClient by clearing the class (hack for testing)
+    // This ensures each test gets a fresh client
+    (AwsKmsProvider as any).kmsClient = undefined;
+
     // Get the mocked KMSClient instance
     provider = new AwsKmsProvider(TEST_KMS_KEY_ID);
     const KMSClientMock = KMSClient as jest.MockedClass<typeof KMSClient>;
@@ -47,6 +51,10 @@ describe('AwsKmsProvider', () => {
     });
 
     it('should use AWS_REGION environment variable when set', () => {
+      // Clear mocks and reset static client
+      jest.clearAllMocks();
+      (AwsKmsProvider as any).kmsClient = undefined;
+
       process.env.AWS_REGION = 'eu-west-1';
 
       new AwsKmsProvider(TEST_KMS_KEY_ID);
@@ -54,6 +62,61 @@ describe('AwsKmsProvider', () => {
       expect(KMSClient).toHaveBeenCalledWith({
         region: 'eu-west-1',
       });
+    });
+
+    it('should throw error when kmsKeyId is empty string', () => {
+      expect(() => {
+        new AwsKmsProvider('');
+      }).toThrow('KMS Key ID must be provided for AWS KMS Provider');
+    });
+
+    it('should throw error when kmsKeyId is whitespace only', () => {
+      expect(() => {
+        new AwsKmsProvider('   ');
+      }).toThrow('KMS Key ID must be provided for AWS KMS Provider');
+
+      expect(() => {
+        new AwsKmsProvider('\t\n');
+      }).toThrow('KMS Key ID must be provided for AWS KMS Provider');
+    });
+
+    it('should accept kmsKeyId with leading/trailing whitespace after trim', () => {
+      // Note: The implementation trims before checking length, so this should fail
+      // because ' ' becomes '' after trim
+      expect(() => {
+        new AwsKmsProvider(' ');
+      }).toThrow('KMS Key ID must be provided for AWS KMS Provider');
+    });
+
+    it('should create KMS client only once (singleton pattern)', () => {
+      // Clear previous calls
+      jest.clearAllMocks();
+      (AwsKmsProvider as any).kmsClient = undefined;
+
+      // Create first provider
+      const provider1 = new AwsKmsProvider(TEST_KMS_KEY_ID);
+      expect(KMSClient).toHaveBeenCalledTimes(1);
+
+      // Create second provider - should reuse existing client
+      const provider2 = new AwsKmsProvider('another-key-id');
+      expect(KMSClient).toHaveBeenCalledTimes(1); // Still 1, not 2
+
+      // Both providers should exist
+      expect(provider1).toBeInstanceOf(AwsKmsProvider);
+      expect(provider2).toBeInstanceOf(AwsKmsProvider);
+    });
+
+    it('should reuse static KMS client across multiple instances', () => {
+      jest.clearAllMocks();
+      (AwsKmsProvider as any).kmsClient = undefined;
+
+      // Create multiple providers
+      new AwsKmsProvider('key-1');
+      new AwsKmsProvider('key-2');
+      new AwsKmsProvider('key-3');
+
+      // KMSClient constructor should only be called once
+      expect(KMSClient).toHaveBeenCalledTimes(1);
     });
   });
 

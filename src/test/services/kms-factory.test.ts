@@ -233,13 +233,18 @@ describe('KmsFactory', () => {
       expect(LocalKmsProvider).toHaveBeenCalledTimes(1);
     });
 
-    it('should allow kmsKeyId to be empty string for AWS provider', () => {
-      // Act: AWS provider might validate empty keyId in its constructor
-      const provider = KmsFactory.createProvider('aws', '');
+    it('should delegate validation to AWS provider for empty kmsKeyId', () => {
+      // Arrange: Mock AWS provider to throw error for empty key ID
+      (AwsKmsProvider as jest.MockedClass<typeof AwsKmsProvider>).mockImplementationOnce(() => {
+        throw new Error('KMS Key ID must be provided for AWS KMS Provider');
+      });
 
-      // Assert: Factory should pass empty string without validation
+      // Act & Assert: Factory should pass empty string, AWS provider validates
+      expect(() => {
+        KmsFactory.createProvider('aws', '');
+      }).toThrow('KMS Key ID must be provided for AWS KMS Provider');
+
       expect(AwsKmsProvider).toHaveBeenCalledWith('');
-      expect(provider).toBeInstanceOf(AwsKmsProvider);
     });
   });
 });

@@ -12,14 +12,21 @@ import {
 export class AwsKmsProvider extends BaseKmsProvider {
 
   private kmsKeyId: string;
-  private kmsClient: KMSClient;
+  private static kmsClient: KMSClient;
 
   constructor(kmsKeyId: string) {
     super();
+
+    if (kmsKeyId.trim().length === 0) {
+      throw new Error("KMS Key ID must be provided for AWS KMS Provider");
+    }
+
     this.kmsKeyId = kmsKeyId;
-    this.kmsClient = new KMSClient({
-      region: process.env.AWS_REGION || 'us-east-1',
-    });
+    if (!AwsKmsProvider.kmsClient) {
+      AwsKmsProvider.kmsClient = new KMSClient({
+        region: process.env.AWS_REGION || 'us-east-1',
+      });
+    }
   }
 
   private async generateDataKey(): Promise<Buffer> {
@@ -27,7 +34,7 @@ export class AwsKmsProvider extends BaseKmsProvider {
       KeyId: this.kmsKeyId,
       KeySpec: 'AES_256'
     };
-    const res = await this.kmsClient.send(new GenerateDataKeyCommand(input));
+    const res = await AwsKmsProvider.kmsClient.send(new GenerateDataKeyCommand(input));
 
     if (!res.CiphertextBlob) {
       throw new Error("Failed to generate vault key in AWS KMS");
@@ -43,7 +50,7 @@ export class AwsKmsProvider extends BaseKmsProvider {
       EncryptionAlgorithm: 'SYMMETRIC_DEFAULT'
     };
 
-    const res = await this.kmsClient.send(new DecryptCommand(input));
+    const res = await AwsKmsProvider.kmsClient.send(new DecryptCommand(input));
 
     if (!res.Plaintext) {
       throw new Error("Failed to decrypt vault key in AWS KMS");
