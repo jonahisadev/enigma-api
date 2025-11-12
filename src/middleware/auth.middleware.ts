@@ -8,8 +8,8 @@ export async function authenticate(
     await request.jwtVerify();
   } catch {
     return reply.status(401).send({
-      error: 'Unauthorized',
-      message: 'Invalid or expired token'
+      ok: false,
+      reason: 'Invalid or expired token'
     });
   }
 }

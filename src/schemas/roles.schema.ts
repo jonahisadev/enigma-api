@@ -87,6 +87,7 @@ export const tokenObjectSchema = z.object({
   publicId: z.string().describe("Token public ID"),
   name: z.string().describe("Token name"),
   expiresAt: z.coerce.date().nullable().describe("Expiration timestamp (null if no expiration)"),
+  revoked: z.boolean().describe("Whether the token has been revoked"),
   createdAt: z.coerce.date().describe("Creation timestamp"),
 });
 
@@ -109,8 +110,15 @@ export const deleteRoleResponseSchema = z.object({
 });
 
 export const addAuthMethodResponseSchema = z.object({
-  authMethod: authMethodObjectSchema,
+  publicId: z.string().describe("Auth method public ID"),
+  authType: z.enum(['cidr', 'token']).describe("Authentication method type"),
+  config: z.object({
+    allowedCidrs: z.array(z.string()).optional(),
+    name: z.string().optional(),
+  }).optional().describe("Auth method configuration (for CIDR auth)"),
   token: z.string().optional().describe("Generated token (only returned once for token auth)"),
+  expiresAt: z.coerce.date().optional().describe("Token expiration (only for token auth)"),
+  createdAt: z.coerce.date().describe("Creation timestamp"),
 });
 
 export const getAuthMethodsResponseSchema = z.object({

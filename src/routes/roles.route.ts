@@ -215,7 +215,7 @@ const routes = async (fastify: FastifyInstance) => {
       params: vaultPermissionParamSchema,
       body: updateVaultPermissionSchema,
       response: {
-        200: grantVaultAccessResponseSchema,
+        200: successMessageResponseSchema,
         401: errorResponseSchema,
         404: errorResponseSchema,
       },

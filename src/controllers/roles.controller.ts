@@ -122,8 +122,7 @@ export async function getRole(
       user: {
         publicId: request.user.userId
       }
-    },
-    relations: ['vaultPermissions']
+    }
   });
 
   if (!role) {
@@ -134,7 +133,6 @@ export async function getRole(
     publicId: role.publicId,
     name: role.name,
     description: role.description,
-    vaultIds: role.vaultPermissions?.map(vault => vault.publicId) || [],
     createdAt: role.createdAt,
     updatedAt: role.updatedAt,
   });
@@ -316,12 +314,11 @@ export async function getAuthMethods(
     relations: ['tokens'],
   });
 
-  const authMethodResponses: AuthMethodResponse[] = authMethods.map(method => {
+  const authMethodResponses = authMethods.map(method => {
     const baseResponse = {
-      publicId: method.publicId,
+      id: method.publicId,
       authType: method.authType,
       createdAt: method.createdAt,
-      updatedAt: method.updatedAt,
     };
 
     if (method.authType === 'cidr') {
@@ -330,12 +327,14 @@ export async function getAuthMethods(
         config: {
           allowedCidrs: (method.config as CidrConfig).allowedCidrs,
         },
-      } as AuthMethodResponse;
+      };
     } else if (method.authType === 'token') {
       return {
         ...baseResponse,
-        name: method.tokens[0]?.name,
-      } as TokenAuthMethodResponse;
+        config: {
+          name: method.tokens[0]?.name,
+        },
+      };
     } else {
       throw new Error('Unknown auth method type');
     }
@@ -473,10 +472,11 @@ export async function getVaultPermissions(
     vaultId: vp.vault.publicId,
     vaultName: vp.vault.name,
     canWrite: vp.canWrite,
+    createdAt: vp.createdAt,
   }));
 
   return reply.status(200).send({
-    vaultPermissions: vaults,
+    permissions: vaults,
   });
 }
 
