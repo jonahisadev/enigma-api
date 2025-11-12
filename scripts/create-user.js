@@ -34,7 +34,7 @@ const AppDataSource = new DataSource({
   url: process.env.DATABASE_URL,
   synchronize: true,
   logging: false,
-  entities: ['src/models/**/*.model.ts'],
+  entities: ['dist/models/**/*.model.js'],
 });
 
 async function createUser() {
