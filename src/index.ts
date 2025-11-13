@@ -7,6 +7,7 @@ import { serializerCompiler, validatorCompiler, ZodTypeProvider, jsonSchemaTrans
 import { AppDataSource } from "./data-source";
 import root from "./routes/root.route";
 import auth from "./routes/auth.route";
+import invites from "./routes/invite.route";
 import vaults from "./routes/vaults.route";
 import secrets from "./routes/secrets.route";
 import roles from "./routes/roles.route";
@@ -48,6 +49,7 @@ fastify.register(swagger, {
     },
     tags: [
       { name: "Authentication", description: "Account authentication and token management" },
+      { name: "Invites", description: "User invite and signup operations" },
       { name: "Vaults", description: "Vault management operations" },
       { name: "Secrets", description: "Secret storage and retrieval operations" },
       { name: "Roles", description: "Role-based access control management" },
@@ -81,6 +83,7 @@ fastify.register(jwt, {
 // Register routes
 fastify.register(root);
 fastify.register(auth);
+fastify.register(invites);
 fastify.register(vaults);
 fastify.register(secrets);
 fastify.register(roles);

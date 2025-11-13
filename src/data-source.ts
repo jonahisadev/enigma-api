@@ -7,6 +7,7 @@ import { Role } from './models/role.model';
 import { RoleAuthMethod } from './models/role_auth_method.model';
 import { RoleVaultPermission } from './models/role_vault_permission.model';
 import { RoleToken } from './models/role_token.model';
+import { Invite } from './models/invite.model';
 import { loadSecret } from './utils/config';
 
 const databaseUrl = loadSecret('DATABASE_URL', 'DATABASE_URL_FILE');
@@ -16,7 +17,7 @@ export const AppDataSource = new DataSource({
   url: databaseUrl,
   synchronize: true,
   logging: process.env.NODE_ENV === 'development',
-  entities: [User, Vault, Secret, RefreshToken, Role, RoleAuthMethod, RoleVaultPermission, RoleToken],
+  entities: [User, Vault, Secret, RefreshToken, Role, RoleAuthMethod, RoleVaultPermission, RoleToken, Invite],
   migrations: [],
   subscribers: [],
 });

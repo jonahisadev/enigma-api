@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import jwt from '@fastify/jwt';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import auth from '../routes/auth.route';
+import invites from '../routes/invite.route';
 import { errorHandler } from '../services/errors';
 
 export async function buildAuthTestApp(): Promise<FastifyInstance> {
@@ -23,8 +24,9 @@ export async function buildAuthTestApp(): Promise<FastifyInstance> {
     },
   });
 
-  // Register auth routes
+  // Register routes
   await app.register(auth);
+  await app.register(invites);
 
   return app;
 }
