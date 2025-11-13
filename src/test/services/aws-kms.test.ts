@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { AwsKmsProvider } from '../../services/kms/aws';
 import { KMSClient, GenerateDataKeyCommand, DecryptCommand } from '@aws-sdk/client-kms';
 
 // Mock the AWS SDK KMS Client
@@ -19,6 +18,9 @@ jest.mock('crypto', () => ({
   randomBytes: jest.fn((size: number) => Buffer.alloc(size, 'a')),
 }));
 
+// Import after mocks are set up
+import { AwsKmsProvider, createKmsClient } from '../../services/kms/aws';
+
 describe('AwsKmsProvider', () => {
   let provider: AwsKmsProvider;
   let mockKmsClient: any;
@@ -27,8 +29,12 @@ describe('AwsKmsProvider', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Reset environment variable
+    // Reset environment variables
     delete process.env.AWS_REGION;
+    delete process.env.AWS_ACCESS_KEY_ID;
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    delete process.env.AWS_ACCESS_KEY_ID_FILE;
+    delete process.env.AWS_SECRET_ACCESS_KEY_FILE;
 
     // Reset the static kmsClient by clearing the class (hack for testing)
     // This ensures each test gets a fresh client
@@ -41,16 +47,27 @@ describe('AwsKmsProvider', () => {
   });
 
   describe('constructor', () => {
-    it('should initialize with provided KMS key ID and default region', () => {
+    it('should initialize with provided KMS key ID and create KMS client', () => {
       const testProvider = new AwsKmsProvider(TEST_KMS_KEY_ID);
 
       expect(testProvider).toBeInstanceOf(AwsKmsProvider);
+      // createKmsClient is called internally, which creates a KMSClient
+      expect(KMSClient).toHaveBeenCalled();
+    });
+
+    it('should create KMS client with default region when AWS_REGION is not set', () => {
+      // Clear mocks and reset static client
+      jest.clearAllMocks();
+      (AwsKmsProvider as any).kmsClient = undefined;
+
+      new AwsKmsProvider(TEST_KMS_KEY_ID);
+
       expect(KMSClient).toHaveBeenCalledWith({
         region: 'us-east-1',
       });
     });
 
-    it('should use AWS_REGION environment variable when set', () => {
+    it('should create KMS client with AWS_REGION environment variable when set', () => {
       // Clear mocks and reset static client
       jest.clearAllMocks();
       (AwsKmsProvider as any).kmsClient = undefined;
