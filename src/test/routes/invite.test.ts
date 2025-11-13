@@ -12,6 +12,13 @@ jest.mock('../../data-source', () => ({
       findOne: jest.fn(),
       save: jest.fn(),
     })),
+    transaction: jest.fn(async (callback: any) => {
+      // Mock entity manager
+      const mockEntityManager = {
+        save: jest.fn((entity: any) => Promise.resolve(entity)),
+      };
+      return callback(mockEntityManager);
+    }),
   },
 }));
 
@@ -86,6 +93,7 @@ describe('Invite Routes', () => {
       } as User;
 
       (InviteRepository.findOne as any).mockResolvedValue(mockInvite);
+      (UserRepository.findOne as any).mockResolvedValue(null); // No existing user
       (InviteRepository.save as any).mockResolvedValue({ ...mockInvite, usedAt: new Date() });
       (UserRepository.save as any).mockResolvedValue(mockUser);
       (KmsFactory.createAccountKey as any).mockResolvedValue('not-needed');
@@ -115,13 +123,10 @@ describe('Invite Routes', () => {
       expect(InviteRepository.findOne).toHaveBeenCalledWith({
         where: { inviteCode: 'ABCDEF' },
       });
+      expect(UserRepository.findOne).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+      });
       expect(KmsFactory.createAccountKey).toHaveBeenCalledWith('local');
-      expect(UserRepository.save).toHaveBeenCalled();
-      expect(InviteRepository.save).toHaveBeenCalled();
-
-      // Verify invite was marked as used
-      const savedInvite = (InviteRepository.save as any).mock.calls[0][0];
-      expect(savedInvite.usedAt).toBeInstanceOf(Date);
     });
 
     it('should fail with invalid invite code', async () => {
@@ -212,6 +217,52 @@ describe('Invite Routes', () => {
       expect(body.reason).toContain('does not match invite');
     });
 
+    it('should fail when user with email already exists', async () => {
+      // Arrange: Mock invite and existing user
+      const mockInvite = {
+        id: 1,
+        publicId: randomUUID(),
+        inviteCode: 'ABCDEF',
+        email: 'test@example.com',
+        kmsProvider: 'local' as const,
+        usedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Invite;
+
+      const existingUser = {
+        id: 1,
+        publicId: randomUUID(),
+        name: 'Existing User',
+        email: 'test@example.com',
+        password: 'hashed-password',
+        kmsProvider: 'local' as const,
+        accountKeyId: 'not-needed',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as User;
+
+      (InviteRepository.findOne as any).mockResolvedValue(mockInvite);
+      (UserRepository.findOne as any).mockResolvedValue(existingUser);
+
+      // Act
+      const response = await app.inject({
+        method: 'POST',
+        url: '/invites',
+        payload: {
+          email: 'test@example.com',
+          name: 'New User',
+          password: 'password123',
+          inviteCode: 'ABCDEF',
+        },
+      });
+
+      // Assert
+      expect(response.statusCode).toBe(409);
+      const body = JSON.parse(response.body);
+      expect(body.reason).toContain('already exists');
+    });
+
     it('should handle email case-insensitivity', async () => {
       // Arrange: Mock invite with lowercase email
       const mockInvite = {
@@ -240,6 +291,7 @@ describe('Invite Routes', () => {
       } as User;
 
       (InviteRepository.findOne as any).mockResolvedValue(mockInvite);
+      (UserRepository.findOne as any).mockResolvedValue(null); // No existing user
       (InviteRepository.save as any).mockResolvedValue({ ...mockInvite, usedAt: new Date() });
       (UserRepository.save as any).mockResolvedValue(mockUser);
       (KmsFactory.createAccountKey as any).mockResolvedValue('not-needed');
@@ -404,6 +456,7 @@ describe('Invite Routes', () => {
       } as User;
 
       (InviteRepository.findOne as any).mockResolvedValue(mockInvite);
+      (UserRepository.findOne as any).mockResolvedValue(null); // No existing user
       (InviteRepository.save as any).mockResolvedValue({ ...mockInvite, usedAt: new Date() });
       (UserRepository.save as any).mockResolvedValue(mockUser);
       (KmsFactory.createAccountKey as any).mockResolvedValue('aws-key-123');

@@ -3,10 +3,11 @@ import { randomUUID } from 'crypto';
 import { hashSync } from 'bcrypt';
 import { InviteRepository } from '../repositories/invite.repository';
 import { UserRepository } from '../repositories/user.repository';
-import { BadRequestError } from '../services/errors';
+import { BadRequestError, ConflictError } from '../services/errors';
 import { formatUserResponse } from '../services/auth.service';
 import { KmsFactory } from '../services/kms/factory';
 import { User } from '../models/user.model';
+import { AppDataSource } from '../data-source';
 
 interface AcceptInviteRequest {
   email: string;
@@ -51,23 +52,37 @@ export async function acceptInvite(
     throw new BadRequestError('Email does not match invite');
   }
 
+  // Check if user with this email already exists
+  const existingUser = await UserRepository.findOne({
+    where: { email: email.toLowerCase() }
+  });
+
+  if (existingUser) {
+    throw new ConflictError('A user with this email already exists');
+  }
+
   // Create account key using KMS factory
   const accountKeyId = await KmsFactory.createAccountKey(invite.kmsProvider);
 
-  // Create new user
-  const user = new User();
-  user.publicId = randomUUID();
-  user.email = email;
-  user.name = name;
-  user.password = hashSync(password, 10);
-  user.kmsProvider = invite.kmsProvider;
-  user.accountKeyId = accountKeyId;
+  // Use transaction to ensure atomicity of user creation and invite marking
+  const user = await AppDataSource.transaction(async (transactionalEntityManager) => {
+    // Create new user
+    const newUser = new User();
+    newUser.publicId = randomUUID();
+    newUser.email = email;
+    newUser.name = name;
+    newUser.password = hashSync(password, 10);
+    newUser.kmsProvider = invite.kmsProvider;
+    newUser.accountKeyId = accountKeyId;
 
-  await UserRepository.save(user);
+    await transactionalEntityManager.save(newUser);
 
-  // Mark invite as used
-  invite.usedAt = new Date();
-  await InviteRepository.save(invite);
+    // Mark invite as used
+    invite.usedAt = new Date();
+    await transactionalEntityManager.save(invite);
+
+    return newUser;
+  });
 
   return reply.send({
     user: formatUserResponse(user)

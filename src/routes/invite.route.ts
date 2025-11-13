@@ -17,6 +17,7 @@ const routes = async (fastify: FastifyInstance) => {
       response: {
         200: acceptInviteResponseSchema,
         400: errorResponseSchema,
+        409: errorResponseSchema,
       },
     },
     handler: acceptInvite,
