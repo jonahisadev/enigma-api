@@ -8,8 +8,37 @@ import {
   DecryptCommandInput,
   GenerateDataKeyCommand,
   GenerateDataKeyCommandInput,
-  KMSClient
+  KMSClient,
+  KMSClientConfig
 } from '@aws-sdk/client-kms';
+import { loadSecret } from "../../utils/config";
+
+/**
+ * Create a KMS client with credentials loaded from file-based or direct environment variables.
+ * Supports Docker secrets pattern where secrets are mounted as files.
+ *
+ * @returns Configured KMSClient instance
+ */
+export function createKmsClient(): KMSClient {
+  // Load AWS credentials from file-based or direct environment variables
+  const accessKeyId = loadSecret('AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID_FILE');
+  const secretAccessKey = loadSecret('AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY_FILE');
+
+  // Build KMS client configuration
+  const clientConfig: KMSClientConfig = {
+    region: process.env.AWS_REGION || 'us-east-1',
+  };
+
+  // Only add credentials if both are present, otherwise rely on AWS SDK default credential chain
+  if (accessKeyId && secretAccessKey) {
+    clientConfig.credentials = {
+      accessKeyId,
+      secretAccessKey,
+    };
+  }
+
+  return new KMSClient(clientConfig);
+}
 
 export class AwsKmsProvider extends BaseKmsProvider {
 
@@ -25,9 +54,7 @@ export class AwsKmsProvider extends BaseKmsProvider {
 
     this.kmsKeyId = kmsKeyId;
     if (!AwsKmsProvider.kmsClient) {
-      AwsKmsProvider.kmsClient = new KMSClient({
-        region: process.env.AWS_REGION || 'us-east-1',
-      });
+      AwsKmsProvider.kmsClient = createKmsClient();
     }
   }
 
@@ -83,9 +110,7 @@ export class AwsKmsProvider extends BaseKmsProvider {
 }
 
 export const createAwsAccountKey = async (): Promise<string> => {
-  const client = new KMSClient({
-    region: process.env.AWS_REGION || 'us-east-1',
-  });
+  const client = createKmsClient();
 
   const input: CreateKeyCommandInput = {
     KeySpec: 'SYMMETRIC_DEFAULT',

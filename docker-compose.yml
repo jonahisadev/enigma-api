@@ -4,16 +4,25 @@ services:
     secrets:
       - jwt_secret
       - database_url
+      - aws_access_key_id
+      - aws_secret_access_key
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3000
       - JWT_SECRET_FILE=/run/secrets/jwt_secret
       - DATABASE_URL_FILE=/run/secrets/database_url
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID_FILE=/run/secrets/aws_access_key_id
+      - AWS_SECRET_ACCESS_KEY_FILE=/run/secrets/aws_secret_access_key
 
 secrets:
   jwt_secret:
     external: true
   database_url:
+    external: true
+  aws_access_key_id:
+    external: true
+  aws_secret_access_key:
     external: true
