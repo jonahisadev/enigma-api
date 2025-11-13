@@ -38,6 +38,28 @@ yarn lint:fix         # Auto-fix linting issues
 node scripts/create-user.js <email> <password> <name> <kmsProvider> <accountKeyId>
 ```
 
+### API Documentation
+```bash
+# Access Swagger UI (requires running server)
+# Start server: yarn dev
+# Visit: http://localhost:3000/docs
+
+# Export OpenAPI specification
+yarn openapi:export         # Exports YAML to openapi.yaml
+yarn openapi:export:json    # Exports JSON to openapi.json
+
+# Or use the script directly
+./scripts/export-openapi.sh yaml openapi.yaml
+./scripts/export-openapi.sh json openapi.json
+```
+
+The API includes full OpenAPI 3.0 documentation with:
+- Complete request/response schemas
+- JWT bearer authentication scheme
+- Descriptions for all endpoints
+- Tagged organization (Authentication, Vaults, Secrets, Roles, Role Authentication)
+- Response status codes and error schemas
+
 ## Architecture
 
 ### Request Flow

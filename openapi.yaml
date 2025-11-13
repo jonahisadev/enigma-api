@@ -1,0 +1,2522 @@
+openapi: 3.0.3
+info:
+  title: Enigma Secrets Management API
+  description: API for securely storing and managing encryption keys and secrets
+    across multiple vaults with KMS integration support
+  version: 0.2.0
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from login endpoints
+  schemas: {}
+paths:
+  /:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /health:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /accounts/login:
+    post:
+      tags:
+        - Authentication
+      description: Authenticate with email and password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  description: User's email address
+                  type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                password:
+                  description: User's password
+                  type: string
+                  minLength: 1
+              required:
+                - email
+                - password
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    description: JWT access token (expires in 15 minutes)
+                    type: string
+                  refreshToken:
+                    description: Refresh token (expires in 30 days)
+                    type: string
+                  user:
+                    description: User information
+                    type: object
+                    properties:
+                      publicId:
+                        description: User public ID
+                        type: string
+                      name:
+                        description: User name
+                        type: string
+                      email:
+                        description: User email
+                        type: string
+                        format: email
+                        pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                    required:
+                      - publicId
+                      - name
+                      - email
+                    additionalProperties: false
+                required:
+                  - accessToken
+                  - refreshToken
+                  - user
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /accounts/login/refresh:
+    post:
+      tags:
+        - Authentication
+      description: Refresh access token using a refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  description: Refresh token obtained from login
+                  type: string
+                  minLength: 1
+              required:
+                - refreshToken
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    description: New JWT access token
+                    type: string
+                  refreshToken:
+                    description: New refresh token
+                    type: string
+                  user:
+                    description: User information
+                    type: object
+                    properties:
+                      publicId:
+                        description: User public ID
+                        type: string
+                      name:
+                        description: User name
+                        type: string
+                      email:
+                        description: User email
+                        type: string
+                        format: email
+                        pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                    required:
+                      - publicId
+                      - name
+                      - email
+                    additionalProperties: false
+                required:
+                  - accessToken
+                  - refreshToken
+                  - user
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /accounts/login/revoke:
+    post:
+      tags:
+        - Authentication
+      description: Revoke one or all refresh tokens
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  description: Specific refresh token to revoke (omit to revoke all)
+                  type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    description: Success message
+                    type: string
+                required:
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /vaults:
+    post:
+      tags:
+        - Vaults
+      description: Create a new vault
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: Vault name
+                  type: string
+                  minLength: 1
+              required:
+                - name
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Vault public ID
+                    type: string
+                  name:
+                    description: Vault name
+                    type: string
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    get:
+      tags:
+        - Vaults
+      description: List all vaults accessible to the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vaults:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        publicId:
+                          description: Vault public ID
+                          type: string
+                        name:
+                          description: Vault name
+                          type: string
+                        createdAt:
+                          description: Creation timestamp
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          description: Last update timestamp
+                          type: string
+                          format: date-time
+                      required:
+                        - publicId
+                        - name
+                        - createdAt
+                        - updatedAt
+                      additionalProperties: false
+                required:
+                  - vaults
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /vaults/{id}:
+    get:
+      tags:
+        - Vaults
+      description: Get a specific vault by ID
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Vault public ID
+                    type: string
+                  name:
+                    description: Vault name
+                    type: string
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    put:
+      tags:
+        - Vaults
+      description: Update vault name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: New vault name
+                  type: string
+                  minLength: 1
+              required:
+                - name
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Vault public ID
+                    type: string
+                  name:
+                    description: Vault name
+                    type: string
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    delete:
+      tags:
+        - Vaults
+      description: Delete a vault and all its secrets (requires password authentication)
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /vaults/{vaultId}/secrets:
+    post:
+      tags:
+        - Secrets
+      description: Create a new secret in a vault
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: Secret name (unique per vault)
+                  type: string
+                  minLength: 1
+                value:
+                  description: Secret value (will be encrypted)
+                  type: string
+                  minLength: 1
+              required:
+                - name
+                - value
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Secret public ID
+                    type: string
+                  name:
+                    description: Secret name
+                    type: string
+                  version:
+                    description: Secret version number
+                    type: number
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - version
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    get:
+      tags:
+        - Secrets
+      description: List all secrets in a vault (optionally filter by name or get
+        latest versions only)
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: name
+          required: false
+          description: Filter by secret name
+        - schema:
+            type: boolean
+          in: query
+          name: latest
+          required: false
+          description: Only return latest version of each secret
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secrets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        publicId:
+                          description: Secret public ID
+                          type: string
+                        name:
+                          description: Secret name
+                          type: string
+                        version:
+                          description: Secret version number
+                          type: number
+                        createdAt:
+                          description: Creation timestamp
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          description: Last update timestamp
+                          type: string
+                          format: date-time
+                      required:
+                        - publicId
+                        - name
+                        - version
+                        - createdAt
+                        - updatedAt
+                      additionalProperties: false
+                required:
+                  - secrets
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    delete:
+      tags:
+        - Secrets
+      description: Delete all versions of a secret by name
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+          in: query
+          name: name
+          required: true
+          description: Secret name to delete (all versions)
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  deletedCount:
+                    type: number
+                required:
+                  - message
+                  - deletedCount
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /vaults/{vaultId}/secrets/{secretId}:
+    get:
+      tags:
+        - Secrets
+      description: Get a specific secret by ID (decrypted)
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+        - schema:
+            type: string
+          in: path
+          name: secretId
+          required: true
+          description: Secret public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Secret public ID
+                    type: string
+                  name:
+                    description: Secret name
+                    type: string
+                  value:
+                    description: Decrypted secret value (only in get by ID)
+                    type: string
+                  version:
+                    description: Secret version number
+                    type: number
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - version
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    put:
+      tags:
+        - Secrets
+      description: Update a secret value (creates a new version)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  description: New secret value (creates new version)
+                  type: string
+                  minLength: 1
+              required:
+                - value
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+        - schema:
+            type: string
+          in: path
+          name: secretId
+          required: true
+          description: Secret public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Secret public ID
+                    type: string
+                  name:
+                    description: Secret name
+                    type: string
+                  version:
+                    description: Secret version number
+                    type: number
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - version
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles:
+    post:
+      tags:
+        - Roles
+      description: Create a new role for delegated access
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: Role name
+                  type: string
+                  minLength: 1
+                description:
+                  description: Role description
+                  type: string
+              required:
+                - name
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Role public ID
+                    type: string
+                  name:
+                    description: Role name
+                    type: string
+                  description:
+                    description: Role description
+                    type: string
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    get:
+      tags:
+        - Roles
+      description: List all roles for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        publicId:
+                          description: Role public ID
+                          type: string
+                        name:
+                          description: Role name
+                          type: string
+                        description:
+                          description: Role description
+                          type: string
+                        createdAt:
+                          description: Creation timestamp
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          description: Last update timestamp
+                          type: string
+                          format: date-time
+                      required:
+                        - publicId
+                        - name
+                        - createdAt
+                        - updatedAt
+                      additionalProperties: false
+                required:
+                  - roles
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}:
+    get:
+      tags:
+        - Roles
+      description: Get a specific role by ID
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Role public ID
+                    type: string
+                  name:
+                    description: Role name
+                    type: string
+                  description:
+                    description: Role description
+                    type: string
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    put:
+      tags:
+        - Roles
+      description: Update role name or description
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: New role name
+                  type: string
+                  minLength: 1
+                description:
+                  description: New role description
+                  type: string
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicId:
+                    description: Role public ID
+                    type: string
+                  name:
+                    description: Role name
+                    type: string
+                  description:
+                    description: Role description
+                    type: string
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    description: Last update timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - publicId
+                  - name
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    delete:
+      tags:
+        - Roles
+      description: Delete a role and all associated auth methods
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/auth-methods:
+    post:
+      tags:
+        - Roles
+      description: Add CIDR or token authentication method to role
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                authType:
+                  description: Authentication method type
+                  type: string
+                  enum:
+                    - cidr
+                    - token
+                config:
+                  description: Auth method configuration
+                  type: object
+                  properties:
+                    allowedCidrs:
+                      description: Allowed CIDR ranges (for CIDR auth)
+                      type: array
+                      items:
+                        type: string
+                    lifetime:
+                      description: Token lifetime duration (for token auth, e.g., '30d')
+                      type: string
+                    name:
+                      description: Token name/description (for token auth)
+                      type: string
+              required:
+                - authType
+                - config
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authMethod:
+                    type: object
+                    properties:
+                      id:
+                        description: Auth method ID
+                        type: string
+                      authType:
+                        description: Authentication method type
+                        type: string
+                        enum:
+                          - cidr
+                          - token
+                      config:
+                        description: Auth method configuration (token value never returned)
+                        type: object
+                        properties:
+                          allowedCidrs:
+                            type: array
+                            items:
+                              type: string
+                          name:
+                            type: string
+                        additionalProperties: false
+                      createdAt:
+                        description: Creation timestamp
+                        type: string
+                        format: date-time
+                    required:
+                      - id
+                      - authType
+                      - config
+                      - createdAt
+                    additionalProperties: false
+                  token:
+                    description: Generated token (only returned once for token auth)
+                    type: string
+                required:
+                  - authMethod
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    get:
+      tags:
+        - Roles
+      description: List authentication methods for a role
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authMethods:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          description: Auth method ID
+                          type: string
+                        authType:
+                          description: Authentication method type
+                          type: string
+                          enum:
+                            - cidr
+                            - token
+                        config:
+                          description: Auth method configuration (token value never returned)
+                          type: object
+                          properties:
+                            allowedCidrs:
+                              type: array
+                              items:
+                                type: string
+                            name:
+                              type: string
+                          additionalProperties: false
+                        createdAt:
+                          description: Creation timestamp
+                          type: string
+                          format: date-time
+                      required:
+                        - id
+                        - authType
+                        - config
+                        - createdAt
+                      additionalProperties: false
+                required:
+                  - authMethods
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/auth-methods/{id}:
+    delete:
+      tags:
+        - Roles
+      description: Remove an authentication method from a role
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+          description: Auth method ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/vaults:
+    post:
+      tags:
+        - Roles
+      description: Grant vault access to a role
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vaultId:
+                  description: Vault public ID
+                  type: string
+                canWrite:
+                  description: Grant write permissions (true) or read-only (false)
+                  type: boolean
+              required:
+                - vaultId
+                - canWrite
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vaultId:
+                    description: Vault public ID
+                    type: string
+                  vaultName:
+                    description: Vault name
+                    type: string
+                  canWrite:
+                    description: Has write permissions
+                    type: boolean
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - vaultId
+                  - vaultName
+                  - canWrite
+                  - createdAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    get:
+      tags:
+        - Roles
+      description: List vault permissions for a role
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  permissions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        vaultId:
+                          description: Vault public ID
+                          type: string
+                        vaultName:
+                          description: Vault name
+                          type: string
+                        canWrite:
+                          description: Has write permissions
+                          type: boolean
+                        createdAt:
+                          description: Creation timestamp
+                          type: string
+                          format: date-time
+                      required:
+                        - vaultId
+                        - vaultName
+                        - canWrite
+                        - createdAt
+                      additionalProperties: false
+                required:
+                  - permissions
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/vaults/{vaultId}:
+    put:
+      tags:
+        - Roles
+      description: Update vault permission (read-only or read-write)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                canWrite:
+                  description: Update write permissions (true) or read-only (false)
+                  type: boolean
+              required:
+                - canWrite
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vaultId:
+                    description: Vault public ID
+                    type: string
+                  vaultName:
+                    description: Vault name
+                    type: string
+                  canWrite:
+                    description: Has write permissions
+                    type: boolean
+                  createdAt:
+                    description: Creation timestamp
+                    type: string
+                    format: date-time
+                required:
+                  - vaultId
+                  - vaultName
+                  - canWrite
+                  - createdAt
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+    delete:
+      tags:
+        - Roles
+      description: Revoke vault access from a role
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+        - schema:
+            type: string
+          in: path
+          name: vaultId
+          required: true
+          description: Vault public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/tokens:
+    get:
+      tags:
+        - Roles
+      description: List active tokens for a role
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        publicId:
+                          description: Token public ID
+                          type: string
+                        name:
+                          description: Token name
+                          type: string
+                        expiresAt:
+                          description: Expiration timestamp (null if no expiration)
+                          nullable: true
+                          type: string
+                          format: date-time
+                        createdAt:
+                          description: Creation timestamp
+                          type: string
+                          format: date-time
+                      required:
+                        - publicId
+                        - name
+                        - expiresAt
+                        - createdAt
+                      additionalProperties: false
+                required:
+                  - tokens
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/tokens/{tokenId}:
+    delete:
+      tags:
+        - Roles
+      description: Revoke a specific token
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+        - schema:
+            type: string
+          in: path
+          name: tokenId
+          required: true
+          description: Token ID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/login/cidr:
+    post:
+      tags:
+        - Role Authentication
+      description: Authenticate using IP-based CIDR validation
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    description: JWT access token for role-based access
+                    type: string
+                required:
+                  - accessToken
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+  /roles/{roleId}/login/token:
+    post:
+      tags:
+        - Role Authentication
+      description: Authenticate using a static token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  description: Static authentication token
+                  type: string
+                  minLength: 1
+              required:
+                - token
+        required: true
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleId
+          required: true
+          description: Role public ID
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    description: JWT access token for role-based access
+                    type: string
+                required:
+                  - accessToken
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    enum:
+                      - false
+                  reason:
+                    description: Error description
+                    type: string
+                required:
+                  - ok
+                  - reason
+                additionalProperties: false
+servers:
+  - url: http://localhost:3000
+    description: Development server
+tags:
+  - name: Authentication
+    description: Account authentication and token management
+  - name: Vaults
+    description: Vault management operations
+  - name: Secrets
+    description: Secret storage and retrieval operations
+  - name: Roles
+    description: Role-based access control management
+  - name: Role Authentication
+    description: Role-based authentication endpoints

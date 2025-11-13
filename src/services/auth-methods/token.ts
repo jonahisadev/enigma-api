@@ -22,7 +22,7 @@ export interface TokenResponse {
 export const createToken = async (opts: CreateTokenOpts): Promise<TokenResponse> => {
   const tokenData = randomBytes(32).toString("base64");
   const tokenHash = createHash('sha256').update(tokenData).digest('base64');
-  const ms = parse(opts.lifetime);
+  const ms = parse(opts.lifetime === "never" ? "100y" : opts.lifetime);
 
   if (!ms) {
     throw new Error("Invalid lifetime format");

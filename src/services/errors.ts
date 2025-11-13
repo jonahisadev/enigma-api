@@ -63,7 +63,7 @@ export async function errorHandler(
 
   // Handle Fastify validation errors
   if (error.statusCode === 400 && error.validation) {
-    this.log.warn('Validation error:', error.validation);
+    this.log.warn({ validation: error.validation }, 'Validation error');
     return res.code(400).send({
       ok: false,
       reason: "Validation error",

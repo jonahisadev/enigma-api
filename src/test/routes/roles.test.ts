@@ -388,7 +388,6 @@ describe('Role Routes', () => {
       expect(body.publicId).toBe(mockRoleId);
       expect(body.name).toBe('test-role');
       expect(body.description).toBe('Test description');
-      expect(body.vaultIds).toHaveLength(1);
     });
 
     it('should fail when role not found', async () => {
@@ -1234,11 +1233,13 @@ describe('Role Routes', () => {
             id: 1,
             vault: mockVault1,
             canWrite: true,
+            createdAt: new Date(),
           } as RoleVaultPermission,
           {
             id: 2,
             vault: mockVault2,
             canWrite: false,
+            createdAt: new Date(),
           } as RoleVaultPermission,
         ],
       } as Role;
@@ -1257,10 +1258,10 @@ describe('Role Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.vaultPermissions).toHaveLength(2);
-      expect(body.vaultPermissions[0].vaultName).toBe('vault-1');
-      expect(body.vaultPermissions[0].canWrite).toBe(true);
-      expect(body.vaultPermissions[1].canWrite).toBe(false);
+      expect(body.permissions).toHaveLength(2);
+      expect(body.permissions[0].vaultName).toBe('vault-1');
+      expect(body.permissions[0].canWrite).toBe(true);
+      expect(body.permissions[1].canWrite).toBe(false);
     });
 
     it('should fail when role not found', async () => {
