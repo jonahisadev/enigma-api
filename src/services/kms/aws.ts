@@ -2,6 +2,8 @@ import { BaseKmsProvider } from "./base";
 import { AesKey } from "../crypto.service";
 import { randomBytes } from "crypto";
 import {
+  CreateKeyCommand,
+  CreateKeyCommandInput,
   DecryptCommand,
   DecryptCommandInput,
   GenerateDataKeyCommand,
@@ -79,3 +81,27 @@ export class AwsKmsProvider extends BaseKmsProvider {
   }
 
 }
+
+export const createAwsAccountKey = async (): Promise<string> => {
+  const client = new KMSClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+  });
+
+  const input: CreateKeyCommandInput = {
+    KeySpec: 'SYMMETRIC_DEFAULT',
+    KeyUsage: 'ENCRYPT_DECRYPT',
+  };
+
+  let results;
+  try {
+    results = await client.send(new CreateKeyCommand(input));
+
+    if (!results.KeyMetadata || !results.KeyMetadata.KeyId) {
+      throw new Error("Invalid response from AWS KMS when creating key");
+    }
+  } catch (error) {
+    throw new Error(`Failed to create AWS KMS Key: ${error}`);
+  }
+
+  return results.KeyMetadata.KeyId;
+};

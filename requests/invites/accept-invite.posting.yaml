@@ -1,0 +1,15 @@
+name: Accept Invite
+method: POST
+url: ${API_HOST}/invites
+body:
+  content: |-
+    {
+      "email": "aws-test@test.com",
+      "name": "invited user 2",
+      "password": "password",
+      "inviteCode": "YCDRVQ"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
