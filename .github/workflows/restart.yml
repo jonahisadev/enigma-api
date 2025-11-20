@@ -1,0 +1,21 @@
+name: 🔄 Restart Service
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    name: "Restart Deployed Service"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart service via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          envs: SWARM_STACK
+          script: |
+            docker stack services $SWARM_STACK | tail -n +2 | awk '{print $1}' | xargs docker service update --force
+        env:
+          SWARM_STACK: ${{ vars.SWARM_STACK }}
